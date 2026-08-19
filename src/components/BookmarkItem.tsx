@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardBody, CardFooter } from '@heroui/react';
+import { Card } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import type { Node } from '../core/types';
@@ -147,8 +147,6 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     if (viewMode === 'tile') {
         return (
             <Card
-                isHoverable={!isRenaming}
-                isBlurred
                 onPointerEnter={() => setIsHovered(true)}
                 onPointerLeave={() => setIsHovered(false)}
                 onPointerDown={(e) => {
@@ -168,7 +166,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-100-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
             >
-                <CardBody className="flex flex-row items-center gap-3 p-3">
+                <Card.Content className="flex flex-row items-center gap-3 p-3">
                     {/* Icon */}
                     <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -246,7 +244,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                         />
                         {renderSelectionToggle()}
                     </div>
-                </CardBody>
+                </Card.Content>
             </Card>
         );
     }
@@ -259,8 +257,6 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
 
         return (
             <Card
-                isHoverable={!isRenaming}
-                isBlurred
                 onPointerEnter={() => setIsHovered(true)}
                 onPointerLeave={() => setIsHovered(false)}
                 onPointerDown={(e) => {
@@ -331,7 +327,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     )}
                 </div>
 
-                <CardBody className="p-3">
+                <Card.Content className="p-3">
                     {isRenaming ? (
                         <input
                             ref={inputRef}
@@ -361,7 +357,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                             </p>
                         </>
                     )}
-                </CardBody>
+                </Card.Content>
 
                 {/* Selected indicator */}
                 <div className="absolute top-2 left-2">
@@ -375,8 +371,6 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     if (viewMode === 'card') {
         return (
             <Card
-                isHoverable={!isRenaming}
-                isBlurred
                 onPointerEnter={() => setIsHovered(true)}
                 onPointerLeave={() => setIsHovered(false)}
                 onPointerDown={(e) => {
@@ -396,7 +390,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
             >
-                <CardBody className="p-0">
+                <Card.Content className="p-0">
                     <div
                         className="aspect-[16/10] w-full bg-cover bg-center bg-no-repeat relative flex items-center justify-center"
                         style={{
@@ -431,9 +425,9 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                             />
                         )}
                     </div>
-                </CardBody>
+                </Card.Content>
 
-                <CardFooter className="p-3 pt-2 flex flex-col items-start gap-0.5">
+                <Card.Footer className="p-3 pt-2 flex flex-col items-start gap-0.5">
                     {isRenaming ? (
                         <input
                             ref={inputRef}
@@ -470,7 +464,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                             </p>
                         </>
                     )}
-                </CardFooter>
+                </Card.Footer>
             </Card>
         );
     }

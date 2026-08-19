@@ -44,48 +44,47 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
 
                 {!isTrash && (
                     <Button
-                        variant="light"
+                        variant="tertiary"
                         size="sm"
-                        startContent={<Icon icon="lucide:star" className="w-4 h-4" aria-hidden="true" />}
                         onPress={onFavorite}
                         className="text-gray-600 dark:text-gray-300"
                     >
+                        <Icon icon="lucide:star" className="w-4 h-4" aria-hidden="true" />
                         {t('selection.favorite')}
                     </Button>
                 )}
 
                 {!isTrash && (
                     <Button
-                        variant="light"
+                        variant="tertiary"
                         size="sm"
-                        startContent={<Icon icon="lucide:clock" className="w-4 h-4" aria-hidden="true" />}
                         onPress={onReadLater}
                         className="text-gray-600 dark:text-gray-300"
                     >
+                        <Icon icon="lucide:clock" className="w-4 h-4" aria-hidden="true" />
                         {t('selection.readLater')}
                     </Button>
                 )}
 
                 {isTrash && (
                     <Button
-                        variant="light"
+                        variant="tertiary"
                         size="sm"
-                        startContent={<Icon icon="lucide:rotate-ccw" className="w-4 h-4" aria-hidden="true" />}
                         onPress={onRestore}
                         isDisabled={!onRestore}
                         className="text-gray-600 dark:text-gray-300"
                     >
+                        <Icon icon="lucide:rotate-ccw" className="w-4 h-4" aria-hidden="true" />
                         {t('selection.restore')}
                     </Button>
                 )}
 
                 <Button
-                    variant="light"
+                    variant="danger"
                     size="sm"
-                    color="danger"
-                    startContent={<Icon icon="lucide:trash-2" className="w-4 h-4" aria-hidden="true" />}
                     onPress={onDelete}
                 >
+                    <Icon icon="lucide:trash-2" className="w-4 h-4" aria-hidden="true" />
                     {isTrash ? t('selection.deletePermanent') : t('selection.delete')}
                 </Button>
 
@@ -94,7 +93,7 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({
                 {/* Close button */}
                 <Button
                     isIconOnly
-                    variant="light"
+                    variant="tertiary"
                     size="sm"
                     onPress={onClear}
                     aria-label={t('aria.close')}

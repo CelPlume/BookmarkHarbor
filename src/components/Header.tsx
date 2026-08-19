@@ -5,15 +5,9 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import {
     Button,
-    Input,
+    InputGroup,
     Dropdown,
-    DropdownTrigger,
-    DropdownMenu,
-    DropdownItem,
     Modal,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
@@ -22,7 +16,7 @@ import type { Theme, Locale, ExportScope } from '../core/types';
 interface HeaderProps {
     searchQuery: string;
     onSearchChange: (query: string) => void;
-    searchInputRef: React.RefObject<HTMLInputElement>;
+    searchInputRef: React.RefObject<HTMLInputElement | null>;
     theme: Theme;
     onThemeChange: (theme: Theme) => void;
     locale: Locale;
@@ -88,8 +82,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* 侧边栏切换 */}
                 <Button
                     isIconOnly
-                    variant={sidebarOpen ? 'flat' : 'light'}
-                    color={sidebarOpen ? 'primary' : 'default'}
+                    variant={sidebarOpen ? 'primary' : 'tertiary'}
                     onPress={onSidebarToggle}
                     size="sm"
                     aria-label={t('aria.toggleSidebar')}
@@ -100,87 +93,89 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* 新建 */}
                 <div className="flex gap-2 max-[480px]:hidden">
                     <Button
-                        variant="flat"
+                        variant="secondary"
                         size="sm"
-                        startContent={<Icon icon="lucide:folder-plus" className="w-4 h-4" aria-hidden="true" />}
                         onPress={onNewFolder}
                         className="bg-gray-100 dark:bg-gray-800"
                     >
+                        <Icon icon="lucide:folder-plus" className="w-4 h-4" aria-hidden="true" />
                         <span className="hidden sm:inline">{t('toolbar.newFolder')}</span>
                     </Button>
                     <Button
                         size="sm"
-                        startContent={<Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />}
                         onPress={onNewBookmark}
                         className="bg-[var(--color-primary)] text-white hover:opacity-90 shadow-[0_4px_12px_rgba(var(--color-primary-rgb),0.18)]"
                     >
+                        <Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />
                         <span className="hidden sm:inline">{t('toolbar.newBookmark')}</span>
                     </Button>
                 </div>
                 <div className="hidden max-[480px]:flex">
                     <Dropdown>
-                        <DropdownTrigger>
+                        <Dropdown.Trigger>
                             <Button
-                                variant="flat"
+                                variant="secondary"
                                 size="sm"
-                                startContent={<Icon icon="lucide:plus" className="w-4 h-4" aria-hidden="true" />}
                                 className="bg-gray-100 dark:bg-gray-800"
                                 aria-label={t('toolbar.new')}
                             >
+                                <Icon icon="lucide:plus" className="h-4 w-4" aria-hidden="true" />
                                 {t('toolbar.new')}
                             </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label={t('toolbar.new')}>
-                            <DropdownItem
-                                key="newFolder"
-                                startContent={<Icon icon="lucide:folder-plus" className="w-4 h-4" />}
-                                onPress={onNewFolder}
+                        </Dropdown.Trigger>
+                        <Dropdown.Popover>
+                            <Dropdown.Menu
+                                aria-label={t('toolbar.new')}
+                                onAction={(key) => {
+                                    if (key === 'newFolder') onNewFolder();
+                                    else if (key === 'newBookmark') onNewBookmark();
+                                }}
                             >
-                                {t('toolbar.newFolder')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="newBookmark"
-                                startContent={<Icon icon="lucide:plus" className="w-4 h-4" />}
-                                onPress={onNewBookmark}
-                            >
-                                {t('toolbar.newBookmark')}
-                            </DropdownItem>
-                        </DropdownMenu>
+                                <Dropdown.Item id="newFolder">
+                                    <Icon icon="lucide:folder-plus" className="w-4 h-4" />
+                                    {t('toolbar.newFolder')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="newBookmark">
+                                    <Icon icon="lucide:plus" className="w-4 h-4" />
+                                    {t('toolbar.newBookmark')}
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown.Popover>
                     </Dropdown>
                 </div>
             </div>
 
             {/* 中间搜索框 */}
             <div className="hidden sm:flex max-w-md flex-1 px-8">
-                <Input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={t('search.placeholder')}
-                    value={searchQuery}
-                    onValueChange={onSearchChange}
-                    name="search"
-                    autoComplete="off"
-                    aria-label={t('search.placeholder')}
-                    startContent={<Icon icon="lucide:search" className="text-gray-400" aria-hidden="true" />}
-                    endContent={
-                        searchQuery && (
+                <InputGroup className="hidden sm:flex max-w-md flex-1 px-8 bg-gray-100 dark:bg-gray-800 rounded-full">
+                    <InputGroup.Prefix>
+                        <Icon icon="lucide:search" className="text-gray-400" aria-hidden="true" />
+                    </InputGroup.Prefix>
+                    <InputGroup.Input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder={t('search.placeholder')}
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        name="search"
+                        autoComplete="off"
+                        aria-label={t('search.placeholder')}
+                        className="bg-transparent"
+                    />
+                    {searchQuery && (
+                        <InputGroup.Suffix>
                             <Button
                                 isIconOnly
-                                variant="light"
+                                variant="tertiary"
                                 size="sm"
                                 onPress={() => onSearchChange('')}
                                 aria-label={t('aria.clearSearch')}
                             >
                                 <Icon icon="lucide:x" className="h-4 w-4" aria-hidden="true" />
                             </Button>
-                        )
-                    }
-                    radius="full"
-                    size="sm"
-                    classNames={{
-                        inputWrapper: 'bg-gray-100 dark:bg-gray-800',
-                    }}
-                />
+                        </InputGroup.Suffix>
+                    )}
+                </InputGroup>
             </div>
 
             {/* 右侧控件 */}
@@ -188,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {/* Mobile search */}
                 <Button
                     isIconOnly
-                    variant="light"
+                    variant="tertiary"
                     size="sm"
                     onPress={() => setSearchOpen(true)}
                     aria-label={t('search.placeholder')}
@@ -198,51 +193,58 @@ export const Header: React.FC<HeaderProps> = ({
                 </Button>
                 {/* 语言切换 */}
                 <Dropdown>
-                    <DropdownTrigger>
-                        <Button isIconOnly variant="light" size="sm" aria-label={t('aria.switchLanguage')}>
+                    <Dropdown.Trigger>
+                        <Button isIconOnly variant="tertiary" size="sm" aria-label={t('aria.switchLanguage')}>
                             <Icon icon="lucide:languages" className="h-5 w-5" aria-hidden="true" />
                         </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                        aria-label="Language"
-                        selectedKeys={new Set([locale])}
-                        selectionMode="single"
-                        onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0] as Locale;
-                            if (selected) onLocaleChange(selected);
-                        }}
-                    >
-                        <DropdownItem key="zh">中文</DropdownItem>
-                        <DropdownItem key="en">English</DropdownItem>
-                    </DropdownMenu>
+                    </Dropdown.Trigger>
+                    <Dropdown.Popover>
+                        <Dropdown.Menu
+                            aria-label="Language"
+                            selectedKeys={new Set([locale])}
+                            selectionMode="single"
+                            onSelectionChange={(keys) => {
+                                const selected = Array.from(keys)[0] as Locale;
+                                if (selected) onLocaleChange(selected);
+                            }}
+                        >
+                            <Dropdown.Item id="zh">中文</Dropdown.Item>
+                            <Dropdown.Item id="en">English</Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown.Popover>
                 </Dropdown>
 
                 {/* 主题切换 */}
                 <Dropdown>
-                    <DropdownTrigger>
-                        <Button isIconOnly variant="light" size="sm" aria-label={t('aria.switchTheme')}>
+                    <Dropdown.Trigger>
+                        <Button isIconOnly variant="tertiary" size="sm" aria-label={t('aria.switchTheme')}>
                             <Icon icon={currentThemeIcon} className="h-5 w-5" aria-hidden="true" />
                         </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu
-                        aria-label="Theme"
-                        selectedKeys={new Set([theme])}
-                        selectionMode="single"
-                        onSelectionChange={(keys) => {
-                            const selected = Array.from(keys)[0] as Theme;
-                            if (selected) onThemeChange(selected);
-                        }}
-                    >
-                        <DropdownItem key="light" startContent={<Icon icon="lucide:sun" aria-hidden="true" />}>
-                            {t('theme.light')}
-                        </DropdownItem>
-                        <DropdownItem key="dark" startContent={<Icon icon="lucide:moon" aria-hidden="true" />}>
-                            {t('theme.dark')}
-                        </DropdownItem>
-                        <DropdownItem key="system" startContent={<Icon icon="lucide:monitor" aria-hidden="true" />}>
-                            {t('theme.system')}
-                        </DropdownItem>
-                    </DropdownMenu>
+                    </Dropdown.Trigger>
+                    <Dropdown.Popover>
+                        <Dropdown.Menu
+                            aria-label="Theme"
+                            selectedKeys={new Set([theme])}
+                            selectionMode="single"
+                            onSelectionChange={(keys) => {
+                                const selected = Array.from(keys)[0] as Theme;
+                                if (selected) onThemeChange(selected);
+                            }}
+                        >
+                            <Dropdown.Item id="light">
+                                <Icon icon="lucide:sun" aria-hidden="true" />
+                                {t('theme.light')}
+                            </Dropdown.Item>
+                            <Dropdown.Item id="dark">
+                                <Icon icon="lucide:moon" aria-hidden="true" />
+                                {t('theme.dark')}
+                            </Dropdown.Item>
+                            <Dropdown.Item id="system">
+                                <Icon icon="lucide:monitor" aria-hidden="true" />
+                                {t('theme.system')}
+                            </Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown.Popover>
                 </Dropdown>
 
                 <div className="h-6 w-px bg-gray-200 dark:bg-white/10 mx-2 max-[480px]:hidden" />
@@ -251,7 +253,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {/* Import */}
                     <Button
                         isIconOnly
-                        variant="light"
+                        variant="tertiary"
                         size="sm"
                         onPress={handleImportClick}
                         aria-label={t('toolbar.import')}
@@ -261,27 +263,32 @@ export const Header: React.FC<HeaderProps> = ({
 
                     {/* Export */}
                     <Dropdown>
-                        <DropdownTrigger>
+                        <Dropdown.Trigger>
                             <Button
                                 isIconOnly
-                                variant="light"
+                                variant="tertiary"
                                 size="sm"
                                 aria-label={t('toolbar.export')}
                             >
-                                <Icon icon="lucide:download" className="w-4 h-4" aria-hidden="true" />
+                                <Icon icon="lucide:download" className="h-4 w-4" aria-hidden="true" />
                             </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label="Export options">
-                            <DropdownItem key="all" onPress={() => onExport('all')}>
-                                {t('export.all')}
-                            </DropdownItem>
-                            <DropdownItem key="folder" onPress={() => onExport('folder')}>
-                                {t('export.currentFolder')}
-                            </DropdownItem>
-                            <DropdownItem key="selection" onPress={() => onExport('selection')} isDisabled={selectedCount === 0}>
-                                {t('export.selection')}
-                            </DropdownItem>
-                        </DropdownMenu>
+                        </Dropdown.Trigger>
+                        <Dropdown.Popover>
+                            <Dropdown.Menu
+                                aria-label="Export options"
+                                onAction={(key) => onExport(key as ExportScope)}
+                            >
+                                <Dropdown.Item id="all">
+                                    {t('export.all')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="folder">
+                                    {t('export.currentFolder')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="selection" isDisabled={selectedCount === 0}>
+                                    {t('export.selection')}
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown.Popover>
                     </Dropdown>
                 </div>
                 <input
@@ -295,55 +302,61 @@ export const Header: React.FC<HeaderProps> = ({
 
                 <div className="hidden max-[480px]:flex">
                     <Dropdown>
-                        <DropdownTrigger>
+                        <Dropdown.Trigger>
                             <Button
-                                variant="light"
+                                variant="tertiary"
                                 size="sm"
-                                startContent={<Icon icon="lucide:settings" className="w-4 h-4" aria-hidden="true" />}
                                 aria-label={t('toolbar.manage')}
                             >
+                                <Icon icon="lucide:settings" className="w-4 h-4" aria-hidden="true" />
                                 {t('toolbar.manage')}
                             </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label={t('toolbar.manage')}>
-                            <DropdownItem
-                                key="import"
-                                startContent={<Icon icon="lucide:upload" className="w-4 h-4" />}
-                                onPress={handleImportClick}
+                        </Dropdown.Trigger>
+                        <Dropdown.Popover>
+                            <Dropdown.Menu
+                                aria-label={t('toolbar.manage')}
+                                onAction={(key) => {
+                                    switch (key) {
+                                        case 'import':
+                                            handleImportClick();
+                                            break;
+                                        case 'exportAll':
+                                            onExport('all');
+                                            break;
+                                        case 'exportFolder':
+                                            onExport('folder');
+                                            break;
+                                        case 'exportSelection':
+                                            onExport('selection');
+                                            break;
+                                    }
+                                }}
                             >
-                                {t('toolbar.import')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="exportAll"
-                                startContent={<Icon icon="lucide:download" className="w-4 h-4" />}
-                                onPress={() => onExport('all')}
-                            >
-                                {t('export.all')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="exportFolder"
-                                startContent={<Icon icon="lucide:folder" className="w-4 h-4" />}
-                                onPress={() => onExport('folder')}
-                            >
-                                {t('export.currentFolder')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="exportSelection"
-                                startContent={<Icon icon="lucide:check-square" className="w-4 h-4" />}
-                                onPress={() => onExport('selection')}
-                                isDisabled={selectedCount === 0}
-                            >
-                                {t('export.selection')}
-                            </DropdownItem>
-                        </DropdownMenu>
+                                <Dropdown.Item id="import">
+                                    <Icon icon="lucide:upload" className="w-4 h-4" />
+                                    {t('toolbar.import')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="exportAll">
+                                    <Icon icon="lucide:download" className="w-4 h-4" />
+                                    {t('export.all')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="exportFolder">
+                                    <Icon icon="lucide:folder" className="w-4 h-4" />
+                                    {t('export.currentFolder')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="exportSelection" isDisabled={selectedCount === 0}>
+                                    <Icon icon="lucide:check-square" className="w-4 h-4" />
+                                    {t('export.selection')}
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown.Popover>
                     </Dropdown>
                 </div>
 
                 {/* Inspector 切换 */}
                 <Button
                     isIconOnly
-                    variant={inspectorOpen ? 'flat' : 'light'}
-                    color={inspectorOpen ? 'primary' : 'default'}
+                    variant={inspectorOpen ? 'primary' : 'tertiary'}
                     onPress={onInspectorToggle}
                     size="sm"
                     aria-label={t('aria.toggleInspector')}
@@ -353,41 +366,45 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Mobile search modal */}
-            <Modal isOpen={searchOpen} onClose={() => setSearchOpen(false)} size="sm" backdrop="blur">
-                <ModalContent>
-                    <ModalHeader className="flex flex-col gap-1">{t('search.placeholder')}</ModalHeader>
-                    <ModalBody>
-                        <Input
-                            ref={modalSearchRef}
-                            type="text"
-                            placeholder={t('search.placeholder')}
-                            value={searchQuery}
-                            onValueChange={onSearchChange}
-                            name="search"
-                            autoComplete="off"
-                            aria-label={t('search.placeholder')}
-                            startContent={<Icon icon="lucide:search" className="text-gray-400" aria-hidden="true" />}
-                            endContent={
-                                searchQuery && (
-                                    <Button
-                                        isIconOnly
-                                        variant="light"
-                                        size="sm"
-                                        onPress={() => onSearchChange('')}
-                                        aria-label={t('aria.clearSearch')}
-                                    >
-                                        <Icon icon="lucide:x" className="h-4 w-4" aria-hidden="true" />
-                                    </Button>
-                                )
-                            }
-                            radius="full"
-                            size="sm"
-                            classNames={{
-                                inputWrapper: 'bg-gray-100 dark:bg-gray-800',
-                            }}
-                        />
-                    </ModalBody>
-                </ModalContent>
+            <Modal isOpen={searchOpen} onOpenChange={(open) => { if (!open) setSearchOpen(false); }}>
+                <Modal.Backdrop variant="blur">
+                    <Modal.Container size="sm">
+                        <Modal.Dialog>
+                            <Modal.Header className="flex flex-col gap-1">{t('search.placeholder')}</Modal.Header>
+                            <Modal.Body>
+                                <InputGroup className="bg-gray-100 dark:bg-gray-800 rounded-full">
+                                    <InputGroup.Prefix>
+                                        <Icon icon="lucide:search" className="text-gray-400" aria-hidden="true" />
+                                    </InputGroup.Prefix>
+                                    <InputGroup.Input
+                                        ref={modalSearchRef}
+                                        type="text"
+                                        placeholder={t('search.placeholder')}
+                                        value={searchQuery}
+                                        onChange={(e) => onSearchChange(e.target.value)}
+                                        name="search"
+                                        autoComplete="off"
+                                        aria-label={t('search.placeholder')}
+                                        className="bg-transparent"
+                                    />
+                                    {searchQuery && (
+                                        <InputGroup.Suffix>
+                                            <Button
+                                                isIconOnly
+                                                variant="tertiary"
+                                                size="sm"
+                                                onPress={() => onSearchChange('')}
+                                                aria-label={t('aria.clearSearch')}
+                                            >
+                                                <Icon icon="lucide:x" className="h-4 w-4" aria-hidden="true" />
+                                            </Button>
+                                        </InputGroup.Suffix>
+                                    )}
+                                </InputGroup>
+                            </Modal.Body>
+                        </Modal.Dialog>
+                    </Modal.Container>
+                </Modal.Backdrop>
             </Modal>
         </header>
     );

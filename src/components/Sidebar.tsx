@@ -280,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <Button
                                 isIconOnly
                                 size="sm"
-                                variant="light"
+                                variant="tertiary"
                                 className="w-5 h-5 min-w-0"
                                 onPress={onNewFolder}
                                 aria-label={t('toolbar.newFolder')}
@@ -319,11 +319,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span>© {currentYear}</span>
                         <Link
                             href="https://hevspecu.hxcn.space"
-                            isExternal
-                            underline="hover"
-                            size="sm"
-                            color="foreground"
-                            className="text-[11px] text-gray-500 dark:text-gray-400"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-gray-500 dark:text-gray-400 underline hover:underline"
                         >
                             {copyrightOwner}
                         </Link>
@@ -331,11 +329,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div>All Rights Reserved</div>
                 </div>
                 <Button
-                    variant="light"
+                    variant="tertiary"
                     className="w-full justify-start gap-3 px-3 py-2 text-gray-600 dark:text-gray-400"
                     onPress={onOpenSettings}
-                    startContent={<Icon icon="lucide:settings" className="w-5 h-5" aria-hidden="true" />}
                 >
+                    <Icon icon="lucide:settings" className="w-5 h-5" aria-hidden="true" />
                     {t('settings.title')}
                 </Button>
             </div>

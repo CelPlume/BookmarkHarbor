@@ -7,12 +7,9 @@ import {
     Button,
     ButtonGroup,
     Dropdown,
-    DropdownTrigger,
-    DropdownMenu,
-    DropdownItem,
-    DropdownSection,
+    Header,
     Breadcrumbs,
-    BreadcrumbItem,
+    BreadcrumbsItem,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
@@ -88,52 +85,54 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
             {/* Left button group */}
             <div className="flex min-w-0">
-                <Breadcrumbs size="sm">
+                <Breadcrumbs>
                     {visibleStart.map((crumb, index) => (
-                        <BreadcrumbItem
+                        <BreadcrumbsItem
                             key={crumb.id}
                             onPress={() => onNavigate(crumb.id)}
-                            isCurrent={crumb.id === breadcrumbs[breadcrumbs.length - 1]?.id}
+                            aria-current={crumb.id === breadcrumbs[breadcrumbs.length - 1]?.id ? 'page' : undefined}
                         >
                             {index === 0 ? t('app.allBookmarks') : crumb.title}
-                        </BreadcrumbItem>
+                        </BreadcrumbsItem>
                     ))}
 
                     {shouldCollapse && (
-                        <BreadcrumbItem>
+                        <BreadcrumbsItem>
                             <Dropdown>
-                                <DropdownTrigger>
+                                <Dropdown.Trigger>
                                     <Button
                                         isIconOnly
-                                        variant="light"
+                                        variant="tertiary"
                                         size="sm"
                                         aria-label={t('aria.breadcrumbOverflow')}
                                     >
                                         <Icon icon="lucide:more-horizontal" className="w-4 h-4" aria-hidden="true" />
                                     </Button>
-                                </DropdownTrigger>
-                                <DropdownMenu
-                                    aria-label={t('aria.breadcrumbOverflow')}
-                                    onAction={(key) => onNavigate(String(key))}
-                                >
-                                    {collapsedItems.slice().reverse().map((crumb) => (
-                                        <DropdownItem key={crumb.id}>
-                                            {crumb.title}
-                                        </DropdownItem>
-                                    ))}
-                                </DropdownMenu>
+                                </Dropdown.Trigger>
+                                <Dropdown.Popover>
+                                    <Dropdown.Menu
+                                        aria-label={t('aria.breadcrumbOverflow')}
+                                        onAction={(key) => onNavigate(String(key))}
+                                    >
+                                        {collapsedItems.slice().reverse().map((crumb) => (
+                                            <Dropdown.Item key={crumb.id} id={crumb.id}>
+                                                {crumb.title}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown.Popover>
                             </Dropdown>
-                        </BreadcrumbItem>
+                        </BreadcrumbsItem>
                     )}
 
                     {visibleEnd.map((crumb) => (
-                        <BreadcrumbItem
+                        <BreadcrumbsItem
                             key={crumb.id}
                             onPress={() => onNavigate(crumb.id)}
-                            isCurrent={crumb.id === breadcrumbs[breadcrumbs.length - 1]?.id}
+                            aria-current={crumb.id === breadcrumbs[breadcrumbs.length - 1]?.id ? 'page' : undefined}
                         >
                             {crumb.title}
-                        </BreadcrumbItem>
+                        </BreadcrumbsItem>
                     ))}
                 </Breadcrumbs>
             </div>
@@ -142,136 +141,155 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             <div className="flex gap-1 items-center">
                 {/* Selection menu */}
                 <Dropdown>
-                    <DropdownTrigger>
+                    <Dropdown.Trigger>
                         <Button
                             isIconOnly
-                            variant="light"
+                            variant="tertiary"
                             size="sm"
                             aria-label={t('toolbar.selection')}
                         >
                             <Icon icon="lucide:check-square" className="w-4 h-4" aria-hidden="true" />
                         </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="Selection options">
-                        <DropdownItem
-                            key="selectionMode"
-                            startContent={<Icon icon="lucide:mouse-pointer-2" className="w-4 h-4" />}
-                            endContent={selectionMode ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
-                            onPress={onToggleSelectionMode}
+                    </Dropdown.Trigger>
+                    <Dropdown.Popover>
+                        <Dropdown.Menu
+                            aria-label="Selection options"
+                            onAction={(key) => {
+                                switch (key) {
+                                    case 'selectionMode':
+                                        onToggleSelectionMode?.();
+                                        break;
+                                    case 'selectAll':
+                                        onSelectAll?.();
+                                        break;
+                                    case 'clearSelection':
+                                        onClearSelection?.();
+                                        break;
+                                    case 'invertSelection':
+                                        onInvertSelection?.();
+                                        break;
+                                    case 'undo':
+                                        onUndo?.();
+                                        break;
+                                    case 'redo':
+                                        onRedo?.();
+                                        break;
+                                }
+                            }}
                         >
-                            {t('toolbar.selectionMode')}
-                        </DropdownItem>
-                        <DropdownItem
-                            key="selectAll"
-                            startContent={<Icon icon="lucide:check-check" className="w-4 h-4" />}
-                            onPress={onSelectAll}
-                        >
-                            {t('toolbar.selectAll')}
-                        </DropdownItem>
-                        <DropdownItem
-                            key="clearSelection"
-                            startContent={<Icon icon="lucide:x" className="w-4 h-4" />}
-                            onPress={onClearSelection}
-                            isDisabled={selectedCount === 0}
-                        >
-                            {t('toolbar.clearSelection')}
-                        </DropdownItem>
-                        <DropdownItem
-                            key="invertSelection"
-                            startContent={<Icon icon="lucide:flip-vertical" className="w-4 h-4" />}
-                            onPress={onInvertSelection}
-                        >
-                            {t('toolbar.invertSelection')}
-                        </DropdownItem>
-                        <DropdownItem
-                            key="undo"
-                            startContent={<Icon icon="lucide:undo" className="w-4 h-4" />}
-                            onPress={onUndo}
-                            isDisabled={!canUndo}
-                            shortcut="⌘Z"
-                        >
-                            {t('toolbar.undo')}
-                        </DropdownItem>
-                        <DropdownItem
-                            key="redo"
-                            startContent={<Icon icon="lucide:redo" className="w-4 h-4" />}
-                            onPress={onRedo}
-                            isDisabled={!canRedo}
-                            shortcut="⌘⇧Z"
-                        >
-                            {t('toolbar.redo')}
-                        </DropdownItem>
-                    </DropdownMenu>
+                            <Dropdown.Item id="selectionMode">
+                                <Icon icon="lucide:mouse-pointer-2" className="w-4 h-4" />
+                                <span>{t('toolbar.selectionMode')}</span>
+                                {selectionMode ? <Icon icon="lucide:check" className="ml-auto w-4 h-4" /> : null}
+                            </Dropdown.Item>
+                            <Dropdown.Item id="selectAll">
+                                <Icon icon="lucide:check-check" className="w-4 h-4" />
+                                <span>{t('toolbar.selectAll')}</span>
+                            </Dropdown.Item>
+                            <Dropdown.Item id="clearSelection" isDisabled={selectedCount === 0}>
+                                <Icon icon="lucide:x" className="w-4 h-4" />
+                                <span>{t('toolbar.clearSelection')}</span>
+                            </Dropdown.Item>
+                            <Dropdown.Item id="invertSelection">
+                                <Icon icon="lucide:flip-vertical" className="w-4 h-4" />
+                                <span>{t('toolbar.invertSelection')}</span>
+                            </Dropdown.Item>
+                            <Dropdown.Item id="undo" isDisabled={!canUndo}>
+                                <Icon icon="lucide:undo" className="w-4 h-4" />
+                                <span>{t('toolbar.undo')}</span>
+                                <span className="ml-auto text-xs text-gray-400">⌘Z</span>
+                            </Dropdown.Item>
+                            <Dropdown.Item id="redo" isDisabled={!canRedo}>
+                                <Icon icon="lucide:redo" className="w-4 h-4" />
+                                <span>{t('toolbar.redo')}</span>
+                                <span className="ml-auto text-xs text-gray-400">⌘⇧Z</span>
+                            </Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown.Popover>
                 </Dropdown>
 
                 {/* Sort menu */}
                 <Dropdown>
-                    <DropdownTrigger>
+                    <Dropdown.Trigger>
                         <Button
                             isIconOnly
-                            variant="light"
+                            variant="tertiary"
                             size="sm"
                             aria-label={t('toolbar.sort')}
                         >
                             <Icon icon="lucide:arrow-up-down" className="w-4 h-4" aria-hidden="true" />
                         </Button>
-                    </DropdownTrigger>
-                    <DropdownMenu aria-label="Sort options">
-                        <DropdownSection title={t('toolbar.sortBy')} showDivider>
-                            <DropdownItem
-                                key="default"
-                                startContent={<Icon icon="lucide:align-left" className="w-4 h-4" />}
-                                onPress={() => handleSortFieldChange('default')}
-                                className={sortField === 'default' ? 'text-primary' : ''}
-                            >
-                                {t('toolbar.sortDefault')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="title"
-                                startContent={<Icon icon="lucide:type" className="w-4 h-4" />}
-                                onPress={() => handleSortFieldChange('title')}
-                                className={sortField === 'title' ? 'text-primary' : ''}
-                            >
-                                {t('toolbar.sortByName')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="updatedAt"
-                                startContent={<Icon icon="lucide:calendar" className="w-4 h-4" />}
-                                onPress={() => handleSortFieldChange('updatedAt')}
-                                className={sortField === 'updatedAt' ? 'text-primary' : ''}
-                            >
-                                {t('toolbar.sortByDate')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="type"
-                                startContent={<Icon icon="lucide:folder" className="w-4 h-4" />}
-                                onPress={() => handleSortFieldChange('type')}
-                                className={sortField === 'type' ? 'text-primary' : ''}
-                            >
-                                {t('toolbar.sortByType')}
-                            </DropdownItem>
-                        </DropdownSection>
-                        <DropdownSection title={t('toolbar.order')}>
-                            <DropdownItem
-                                key="asc"
-                                startContent={<Icon icon="lucide:arrow-up" className="w-4 h-4" />}
-                                onPress={() => handleSortOrderChange('asc')}
-                                isDisabled={sortField === 'default'}
-                                className={sortOrder === 'asc' ? 'text-primary' : ''}
-                            >
-                                {t('toolbar.ascending')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="desc"
-                                startContent={<Icon icon="lucide:arrow-down" className="w-4 h-4" />}
-                                onPress={() => handleSortOrderChange('desc')}
-                                isDisabled={sortField === 'default'}
-                                className={sortOrder === 'desc' ? 'text-primary' : ''}
-                            >
-                                {t('toolbar.descending')}
-                            </DropdownItem>
-                        </DropdownSection>
-                    </DropdownMenu>
+                    </Dropdown.Trigger>
+                    <Dropdown.Popover>
+                        <Dropdown.Menu
+                            aria-label="Sort options"
+                            onAction={(key) => {
+                                switch (key) {
+                                    case 'default':
+                                    case 'title':
+                                    case 'updatedAt':
+                                    case 'type':
+                                        handleSortFieldChange(key as SortField);
+                                        break;
+                                    case 'asc':
+                                    case 'desc':
+                                        handleSortOrderChange(key as SortOrder);
+                                        break;
+                                }
+                            }}
+                        >
+                            <Dropdown.Section>
+                                <Header>{t('toolbar.sortBy')}</Header>
+                                <Dropdown.Item
+                                    id="default"
+                                    className={sortField === 'default' ? 'text-primary' : ''}
+                                >
+                                    <Icon icon="lucide:align-left" className="w-4 h-4" />
+                                    <span>{t('toolbar.sortDefault')}</span>
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                    id="title"
+                                    className={sortField === 'title' ? 'text-primary' : ''}
+                                >
+                                    <Icon icon="lucide:type" className="w-4 h-4" />
+                                    <span>{t('toolbar.sortByName')}</span>
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                    id="updatedAt"
+                                    className={sortField === 'updatedAt' ? 'text-primary' : ''}
+                                >
+                                    <Icon icon="lucide:calendar" className="w-4 h-4" />
+                                    <span>{t('toolbar.sortByDate')}</span>
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                    id="type"
+                                    className={sortField === 'type' ? 'text-primary' : ''}
+                                >
+                                    <Icon icon="lucide:folder" className="w-4 h-4" />
+                                    <span>{t('toolbar.sortByType')}</span>
+                                </Dropdown.Item>
+                            </Dropdown.Section>
+                            <Dropdown.Section className="border-t border-gray-200/80 dark:border-white/10 pt-1">
+                                <Header>{t('toolbar.order')}</Header>
+                                <Dropdown.Item
+                                    id="asc"
+                                    isDisabled={sortField === 'default'}
+                                    className={sortOrder === 'asc' ? 'text-primary' : ''}
+                                >
+                                    <Icon icon="lucide:arrow-up" className="w-4 h-4" />
+                                    <span>{t('toolbar.ascending')}</span>
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                    id="desc"
+                                    isDisabled={sortField === 'default'}
+                                    className={sortOrder === 'desc' ? 'text-primary' : ''}
+                                >
+                                    <Icon icon="lucide:arrow-down" className="w-4 h-4" />
+                                    <span>{t('toolbar.descending')}</span>
+                                </Dropdown.Item>
+                            </Dropdown.Section>
+                        </Dropdown.Menu>
+                    </Dropdown.Popover>
                 </Dropdown>
 
                 <div className="w-px h-5 bg-gray-200 dark:bg-white/10 mx-1" />
@@ -280,7 +298,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <ButtonGroup size="sm" className="hidden sm:inline-flex">
                     <Button
                         isIconOnly
-                        variant="light"
+                        variant="tertiary"
                         onPress={() => onViewModeChange('list')}
                         aria-label={t('aria.listView')}
                         className={cn(
@@ -294,7 +312,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     </Button>
                     <Button
                         isIconOnly
-                        variant="light"
+                        variant="tertiary"
                         onPress={() => onViewModeChange('card')}
                         aria-label={t('aria.cardView')}
                         className={cn(
@@ -308,7 +326,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     </Button>
                     <Button
                         isIconOnly
-                        variant="light"
+                        variant="tertiary"
                         onPress={() => onViewModeChange('tile')}
                         aria-label={t('aria.tileView')}
                         className={cn(
@@ -324,41 +342,37 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
                 <div className="sm:hidden">
                     <Dropdown>
-                        <DropdownTrigger>
-                            <Button isIconOnly variant="light" size="sm" aria-label={t('toolbar.view')}>
+                        <Dropdown.Trigger>
+                            <Button isIconOnly variant="tertiary" size="sm" aria-label={t('toolbar.view')}>
                                 <Icon
                                     icon={viewMode === 'list' ? 'lucide:list' : viewMode === 'tile' ? 'lucide:layout-grid' : 'lucide:grid-2x2'}
                                     className="h-4 w-4"
                                     aria-hidden="true"
                                 />
                             </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu aria-label={t('toolbar.view')}>
-                            <DropdownItem
-                                key="list"
-                                startContent={<Icon icon="lucide:list" className="w-4 h-4" />}
-                                endContent={viewMode === 'list' ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
-                                onPress={() => onViewModeChange('list')}
+                        </Dropdown.Trigger>
+                        <Dropdown.Popover>
+                            <Dropdown.Menu
+                                aria-label={t('toolbar.view')}
+                                onAction={(key) => onViewModeChange(key as ViewMode)}
                             >
-                                {t('viewMode.list')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="card"
-                                startContent={<Icon icon="lucide:grid-2x2" className="w-4 h-4" />}
-                                endContent={viewMode === 'card' ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
-                                onPress={() => onViewModeChange('card')}
-                            >
-                                {t('viewMode.card')}
-                            </DropdownItem>
-                            <DropdownItem
-                                key="tile"
-                                startContent={<Icon icon="lucide:layout-grid" className="w-4 h-4" />}
-                                endContent={viewMode === 'tile' ? <Icon icon="lucide:check" className="w-4 h-4" /> : null}
-                                onPress={() => onViewModeChange('tile')}
-                            >
-                                {t('viewMode.tile')}
-                            </DropdownItem>
-                        </DropdownMenu>
+                                <Dropdown.Item id="list">
+                                    <Icon icon="lucide:list" className="w-4 h-4" />
+                                    <span>{t('viewMode.list')}</span>
+                                    {viewMode === 'list' ? <Icon icon="lucide:check" className="ml-auto w-4 h-4" /> : null}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="card">
+                                    <Icon icon="lucide:grid-2x2" className="w-4 h-4" />
+                                    <span>{t('viewMode.card')}</span>
+                                    {viewMode === 'card' ? <Icon icon="lucide:check" className="ml-auto w-4 h-4" /> : null}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="tile">
+                                    <Icon icon="lucide:layout-grid" className="w-4 h-4" />
+                                    <span>{t('viewMode.tile')}</span>
+                                    {viewMode === 'tile' ? <Icon icon="lucide:check" className="ml-auto w-4 h-4" /> : null}
+                                </Dropdown.Item>
+                            </Dropdown.Menu>
+                        </Dropdown.Popover>
                     </Dropdown>
                 </div>
             </div>

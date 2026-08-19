@@ -5,9 +5,12 @@
 import React, { useState, useCallback } from 'react';
 import {
     Button,
+    TextField,
+    Label,
     Input,
+    FieldError,
     Tooltip,
-    Divider,
+    Separator,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
@@ -150,7 +153,7 @@ export const Inspector: React.FC<InspectorProps> = ({
                 </h3>
                 <Button
                     isIconOnly
-                    variant="light"
+                    variant="tertiary"
                     size="sm"
                     onPress={onClose}
                     aria-label={t('aria.close')}
@@ -196,14 +199,9 @@ export const Inspector: React.FC<InspectorProps> = ({
                         {/* 悬停遮罩 */}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <label className="cursor-pointer">
-                                <Button
-                                    size="sm"
-                                    variant="flat"
-                                    className="bg-white/20 backdrop-blur-md border border-white/30 text-white"
-                                    as="span"
-                                >
+                                <span className="inline-flex items-center justify-center h-9 px-4 text-sm text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-medium cursor-pointer">
                                     {t('inspector.changeCover')}
-                                </Button>
+                                </span>
                                 <input
                                     type="file"
                                     className="hidden"
@@ -214,10 +212,10 @@ export const Inspector: React.FC<InspectorProps> = ({
                             {!isFolder && item.url && (
                                 <Button
                                     size="sm"
-                                    variant="flat"
+                                    variant="secondary"
                                     className="bg-white/20 backdrop-blur-md border border-white/30 text-white"
                                     onPress={handleFetchMetadata}
-                                    isLoading={isFetching}
+                                    isPending={isFetching}
                                 >
                                     {t('inspector.fetchMetadata')}
                                 </Button>
@@ -230,15 +228,11 @@ export const Inspector: React.FC<InspectorProps> = ({
                     )}
 
                     {/* 封面 URL 输入 */}
-                    <Input
-                        size="sm"
-                        placeholder={t('inspector.pasteUrl')}
+                    <TextField
                         value={coverInputValue}
-                        onValueChange={setCoverInputValue}
+                        onChange={setCoverInputValue}
                         isInvalid={!!coverUrlError}
-                        errorMessage={coverUrlError || undefined}
                         name="coverUrl"
-                        autoComplete="off"
                         aria-label={t('inspector.pasteUrl')}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -246,37 +240,36 @@ export const Inspector: React.FC<InspectorProps> = ({
                             }
                         }}
                         onBlur={handleCoverUrlSubmit}
-                    />
+                    >
+                        <Input placeholder={t('inspector.pasteUrl')} autoComplete="off" />
+                        {coverUrlError && <FieldError>{coverUrlError}</FieldError>}
+                    </TextField>
                 </div>
 
                 {/* 基本信息 */}
                 <div className="space-y-4">
                     {/* 名称 */}
-                    <Input
-                        label={t('inspector.name')}
-                        labelPlacement="outside"
-                        size="sm"
+                    <TextField
                         value={item.title}
-                        name="title"
-                        autoComplete="off"
-                        onValueChange={(value) => onUpdate(item.id, { title: value })}
-                    />
+                        onChange={(value) => onUpdate(item.id, { title: value })}
+                    >
+                        <Label>{t('inspector.name')}</Label>
+                        <Input name="title" autoComplete="off" />
+                    </TextField>
 
                     {/* URL（仅书签） */}
                     {!isFolder && (
-                        <Input
-                            label={t('inspector.url')}
-                            labelPlacement="outside"
-                            size="sm"
+                        <TextField
                             value={item.url || ''}
-                            name="url"
-                            autoComplete="off"
-                            onValueChange={(value) => onUpdate(item.id, { url: value })}
-                            startContent={<Icon icon="lucide:link" className="w-4 h-4 text-gray-400" aria-hidden="true" />}
-                            classNames={{
-                                input: 'text-primary-600 dark:text-primary-400 font-mono',
-                            }}
-                        />
+                            onChange={(value) => onUpdate(item.id, { url: value })}
+                        >
+                            <Label>{t('inspector.url')}</Label>
+                            <Input
+                                name="url"
+                                autoComplete="off"
+                                className="text-primary-600 dark:text-primary-400 font-mono"
+                            />
+                        </TextField>
                     )}
                 </div>
 
@@ -287,78 +280,90 @@ export const Inspector: React.FC<InspectorProps> = ({
                     </label>
                     <div className="grid grid-cols-6 gap-2">
                         {PRESET_COLORS.map((color) => (
-                            <Tooltip key={color} content={color}>
-                                <button
-                                    type="button"
-                                    className={cn(
-                                        'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
-                                        item.color === color
-                                            ? 'border-gray-900 dark:border-white scale-110'
-                                            : 'border-transparent'
-                                    )}
-                                    style={{ backgroundColor: color }}
-                                    onClick={() => onUpdate(item.id, { color })}
-                                />
+                            <Tooltip key={color}>
+                                <Tooltip.Trigger>
+                                    <button
+                                        type="button"
+                                        className={cn(
+                                            'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
+                                            item.color === color
+                                                ? 'border-gray-900 dark:border-white scale-110'
+                                                : 'border-transparent'
+                                        )}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => onUpdate(item.id, { color })}
+                                    />
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>{color}</Tooltip.Content>
                             </Tooltip>
                         ))}
                         {/* 自定义颜色历史 */}
                         {customColors.map((color) => (
-                            <Tooltip key={color} content={color}>
-                                <button
-                                    type="button"
-                                    className={cn(
-                                        'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
-                                        item.color === color
-                                            ? 'border-gray-900 dark:border-white scale-110'
-                                            : 'border-transparent'
-                                    )}
-                                    style={{ backgroundColor: color }}
-                                    onClick={() => onUpdate(item.id, { color })}
-                                />
+                            <Tooltip key={color}>
+                                <Tooltip.Trigger>
+                                    <button
+                                        type="button"
+                                        className={cn(
+                                            'w-8 h-8 rounded-full border-2 transition-transform hover:scale-110',
+                                            item.color === color
+                                                ? 'border-gray-900 dark:border-white scale-110'
+                                                : 'border-transparent'
+                                        )}
+                                        style={{ backgroundColor: color }}
+                                        onClick={() => onUpdate(item.id, { color })}
+                                    />
+                                </Tooltip.Trigger>
+                                <Tooltip.Content>{color}</Tooltip.Content>
                             </Tooltip>
                         ))}
                         {/* 自定义颜色选择器 */}
-                        <Tooltip content={t('inspector.customColor')}>
-                            <button
-                                type="button"
-                                className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors relative overflow-hidden"
-                                onClick={() => colorInputRef.current?.click()}
-                            >
-                                <Icon icon="lucide:plus" className="w-4 h-4 text-gray-400" aria-hidden="true" />
-                                <input
-                                    ref={colorInputRef}
-                                    type="color"
-                                    value={customColorInput}
-                                    onChange={(e) => setCustomColorInput(e.target.value)}
-                                    onBlur={() => {
-                                        if (customColorInput && !PRESET_COLORS.includes(customColorInput) && !customColors.includes(customColorInput)) {
-                                            onAddCustomColor(customColorInput);
-                                        }
-                                        onUpdate(item.id, { color: customColorInput });
-                                    }}
-                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                />
-                            </button>
+                        <Tooltip>
+                            <Tooltip.Trigger>
+                                <button
+                                    type="button"
+                                    className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors relative overflow-hidden"
+                                    onClick={() => colorInputRef.current?.click()}
+                                >
+                                    <Icon icon="lucide:plus" className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                                    <input
+                                        ref={colorInputRef}
+                                        type="color"
+                                        value={customColorInput}
+                                        onChange={(e) => setCustomColorInput(e.target.value)}
+                                        onBlur={() => {
+                                            if (customColorInput && !PRESET_COLORS.includes(customColorInput) && !customColors.includes(customColorInput)) {
+                                                onAddCustomColor(customColorInput);
+                                            }
+                                            onUpdate(item.id, { color: customColorInput });
+                                        }}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                    />
+                                </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content>{t('inspector.customColor')}</Tooltip.Content>
                         </Tooltip>
                         {/* 清除颜色 */}
-                        <Tooltip content="Remove color">
-                            <button
-                                type="button"
-                                className={cn(
-                                    'w-8 h-8 rounded-full border-2 flex items-center justify-center bg-gray-100 dark:bg-gray-800',
-                                    !item.color
-                                        ? 'border-gray-900 dark:border-white'
-                                        : 'border-transparent'
-                                )}
-                                onClick={() => onUpdate(item.id, { color: undefined })}
-                            >
-                                <Icon icon="lucide:ban" className="w-4 h-4 text-gray-400" aria-hidden="true" />
-                            </button>
+                        <Tooltip>
+                            <Tooltip.Trigger>
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        'w-8 h-8 rounded-full border-2 flex items-center justify-center bg-gray-100 dark:bg-gray-800',
+                                        !item.color
+                                            ? 'border-gray-900 dark:border-white'
+                                            : 'border-transparent'
+                                    )}
+                                    onClick={() => onUpdate(item.id, { color: undefined })}
+                                >
+                                    <Icon icon="lucide:ban" className="w-4 h-4 text-gray-400" aria-hidden="true" />
+                                </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Content>Remove color</Tooltip.Content>
                         </Tooltip>
                     </div>
                 </div>
 
-                <Divider />
+                <Separator />
 
                 {/* 元数据 */}
                 <div className="space-y-2">
