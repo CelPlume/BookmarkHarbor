@@ -2,7 +2,7 @@
  * AuraBookmarks 主应用组件
  */
 
-import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
+import { useMemo, useRef, useState, useCallback, useEffect, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast, Button, Modal } from '@heroui/react';
 import {
@@ -48,6 +48,7 @@ import { Toolbar } from './components/Toolbar';
 import { ContentArea } from './components/ContentArea';
 import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
+import { PanelResizer } from './components/PanelResizer';
 import { SettingsModal } from './components/SettingsModal';
 
 // i18n
@@ -75,6 +76,43 @@ function parseContentDropId(id: string): { folderId: string } | null {
     return { folderId: id.slice(prefix.length) };
 }
 
+// 面板宽度：默认中档，可小一档(×0.8)、大两档(×1.4)，无极调节
+const PANEL_WIDTH_KEY = 'aurabookmarks_panel_widths';
+const SIDEBAR_WIDTH_DEFAULT = 240;
+const SIDEBAR_WIDTH_MIN = Math.round(SIDEBAR_WIDTH_DEFAULT * 0.8);
+const SIDEBAR_WIDTH_MAX = Math.round(SIDEBAR_WIDTH_DEFAULT * 1.4);
+const INSPECTOR_WIDTH_DEFAULT = 320;
+const INSPECTOR_WIDTH_MIN = Math.round(INSPECTOR_WIDTH_DEFAULT * 0.8);
+const INSPECTOR_WIDTH_MAX = Math.round(INSPECTOR_WIDTH_DEFAULT * 1.4);
+
+function clampPanelWidth(value: number, min: number, max: number): number {
+    return Math.min(Math.max(Math.round(value), min), max);
+}
+
+function loadPanelWidth(name: 'sidebar' | 'inspector', def: number): number {
+    try {
+        const raw = window.localStorage.getItem(PANEL_WIDTH_KEY);
+        if (raw) {
+            const value = JSON.parse(raw)[name];
+            if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
+        }
+    } catch {
+        /* ignore */
+    }
+    return def;
+}
+
+function savePanelWidth(name: 'sidebar' | 'inspector', value: number): void {
+    try {
+        const raw = window.localStorage.getItem(PANEL_WIDTH_KEY);
+        const all = raw ? JSON.parse(raw) : {};
+        all[name] = value;
+        window.localStorage.setItem(PANEL_WIDTH_KEY, JSON.stringify(all));
+    } catch {
+        /* ignore */
+    }
+}
+
 export function App() {
     const { t, i18n } = useTranslation();
     const { nodes } = useNodes();
@@ -100,6 +138,29 @@ export function App() {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // 面板宽度（可拖拽无极调节，本地持久化）
+    const layoutRef = useRef<HTMLDivElement>(null);
+    const [sidebarWidth, setSidebarWidth] = useState<number>(() => loadPanelWidth('sidebar', SIDEBAR_WIDTH_DEFAULT));
+    const [inspectorWidth, setInspectorWidth] = useState<number>(() => loadPanelWidth('inspector', INSPECTOR_WIDTH_DEFAULT));
+
+    useEffect(() => {
+        savePanelWidth('sidebar', sidebarWidth);
+    }, [sidebarWidth]);
+
+    useEffect(() => {
+        savePanelWidth('inspector', inspectorWidth);
+    }, [inspectorWidth]);
+
+    const handleSidebarResize = useCallback((clientX: number) => {
+        const left = layoutRef.current?.getBoundingClientRect().left ?? 0;
+        setSidebarWidth(clampPanelWidth(clientX - left, SIDEBAR_WIDTH_MIN, SIDEBAR_WIDTH_MAX));
+    }, []);
+
+    const handleInspectorResize = useCallback((clientX: number) => {
+        const right = layoutRef.current?.getBoundingClientRect().right ?? window.innerWidth;
+        setInspectorWidth(clampPanelWidth(right - clientX, INSPECTOR_WIDTH_MIN, INSPECTOR_WIDTH_MAX));
+    }, []);
 
     const autoExpandTree = settings.autoExpandTree;
     const cardFolderPreviewSize = settings.cardFolderPreviewSize;
@@ -954,7 +1015,11 @@ export function App() {
                 onDragEnd={handleDragEnd}
             >
                 {/* 主内容区域 */}
-                <div className="flex flex-1 overflow-hidden relative">
+                <div
+                    className="flex flex-1 overflow-hidden relative"
+                    ref={layoutRef}
+                    style={{ '--sidebar-width': `${sidebarWidth}px`, '--inspector-width': `${inspectorWidth}px` } as CSSProperties}
+                >
                     {/* 侧边栏 */}
                     {sidebarOpen && (
                         <>
@@ -963,7 +1028,7 @@ export function App() {
                                 onClick={() => setSidebarOpen(false)}
                                 aria-hidden="true"
                             />
-                            <div className="fixed inset-y-0 left-0 z-40 w-60 sm:static sm:z-auto sm:w-60">
+                            <div className="fixed inset-y-0 left-0 z-40 w-60 sm:static sm:z-auto sm:w-[var(--sidebar-width)]">
                                 <Sidebar
                                     nodes={nodes}
                                     rootId="root"
@@ -979,6 +1044,7 @@ export function App() {
                                     currentView={currentView}
                                 />
                             </div>
+                            <PanelResizer onResize={handleSidebarResize} ariaLabel={t('aria.resizeSidebar')} />
                         </>
                     )}
                     {/* 主区域 */}
@@ -1040,11 +1106,14 @@ export function App() {
 
                             {/* 属性面板 */}
                             {inspectorOpen && (
-                                <div
-                                    className="fixed inset-0 bg-black/30 z-30 sm:hidden"
-                                    onClick={() => setInspectorOpen(false)}
-                                    aria-hidden="true"
-                                />
+                                <>
+                                    <div
+                                        className="fixed inset-0 bg-black/30 z-30 sm:hidden"
+                                        onClick={() => setInspectorOpen(false)}
+                                        aria-hidden="true"
+                                    />
+                                    <PanelResizer onResize={handleInspectorResize} ariaLabel={t('aria.resizeInspector')} />
+                                </>
                             )}
                             <div
                                 className={cn(
