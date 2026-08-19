@@ -4,7 +4,7 @@
 
 import { useMemo, useRef, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { addToast, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@heroui/react';
+import { toast, Button, Modal } from '@heroui/react';
 import {
     DndContext,
     DragOverlay,
@@ -219,8 +219,11 @@ export function App() {
             950: -45,
         };
 
-        const primaryForeground = baseHsl.l >= 60 ? '0 0% 0%' : '0 0% 100%';
-        root.style.setProperty('--heroui-primary-foreground', primaryForeground);
+        const accent = `hsl(${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(baseHsl.l)}%)`;
+        const primaryForeground = baseHsl.l >= 60 ? '#000000' : '#ffffff';
+        root.style.setProperty('--accent', accent);
+        root.style.setProperty('--accent-foreground', primaryForeground);
+        root.style.setProperty('--focus', accent);
 
         for (const [shadeStr, offset] of Object.entries(shadeOffsets)) {
             const shade = Number(shadeStr);
@@ -228,15 +231,9 @@ export function App() {
             const rgb = hslToRgb(baseHsl.h, baseHsl.s, l);
 
             root.style.setProperty(`--color-primary-${shade}-rgb`, `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-            root.style.setProperty(
-                `--heroui-primary-${shade}`,
-                `${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(l)}%`
-            );
 
             if (shade === 500) {
                 root.style.setProperty('--color-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-                root.style.setProperty('--heroui-primary', `${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(l)}%`);
-                root.style.setProperty('--heroui-focus', `${Math.round(baseHsl.h)} ${Math.round(baseHsl.s)}% ${Math.round(l)}%`);
             }
 
             if (shade === 600) {
@@ -589,7 +586,7 @@ export function App() {
             selection.clearSelection();
             setDeleteConfirmOpen(false);
             setDeleteConfirmIds([]);
-            addToast({ title: t('toast.deletedPermanent', { count }), color: 'warning', timeout: 3000 });
+            toast(t('toast.deletedPermanent', { count }), { variant: 'warning', timeout: 3000 });
             return;
         }
 
@@ -599,15 +596,12 @@ export function App() {
         setDeleteConfirmOpen(false);
         setDeleteConfirmIds([]);
 
-        addToast({
-            title: t('toast.deleted', { count }),
+        toast(t('toast.deleted', { count }), {
             timeout: 5000,
-            shouldShowTimeoutProgress: true,
-            endContent: (
-                <Button size="sm" variant="flat" onPress={undoDelete ?? history.undo}>
-                    {t('toast.undo')}
-                </Button>
-            ),
+            actionProps: {
+                children: t('toast.undo'),
+                onPress: undoDelete ?? history.undo,
+            },
         });
     }, [applyTrashChange, currentView, deleteConfirmIds, deleteNodes, history.undo, selection, t]);
 
@@ -756,7 +750,7 @@ export function App() {
     // 导出
     const handleExport = useCallback((scope: ExportScope) => {
         if (scope === 'selection' && selection.selectedIds.size === 0) {
-            addToast({ title: t('toast.exportSelectionEmpty'), color: 'warning', timeout: 3000 });
+            toast(t('toast.exportSelectionEmpty'), { variant: 'warning', timeout: 3000 });
             return;
         }
         try {
@@ -807,9 +801,8 @@ export function App() {
             .filter(id => nodes[id])
             .map(id => ({ id, patch: { isFavorite: shouldFavorite } }));
         applyNodeUpdates(updates, { label: 'favorite' });
-        addToast({
-            title: shouldFavorite ? t('toast.favorited') : t('toast.unfavorited'),
-            color: 'success',
+        toast(shouldFavorite ? t('toast.favorited') : t('toast.unfavorited'), {
+            variant: 'success',
             timeout: 3000,
         });
     }, [applyNodeUpdates, nodes, selection, t]);
@@ -823,9 +816,8 @@ export function App() {
             .filter(id => nodes[id])
             .map(id => ({ id, patch: { isReadLater: shouldReadLater } }));
         applyNodeUpdates(updates, { label: 'read-later' });
-        addToast({
-            title: shouldReadLater ? t('toast.readLaterAdded') : t('toast.readLaterRemoved'),
-            color: 'success',
+        toast(shouldReadLater ? t('toast.readLaterAdded') : t('toast.readLaterRemoved'), {
+            variant: 'success',
             timeout: 3000,
         });
     }, [applyNodeUpdates, nodes, selection, t]);
@@ -835,7 +827,7 @@ export function App() {
         const ids = Array.from(selection.selectedIds);
         applyTrashChange(ids, 'restore');
         selection.clearSelection();
-        addToast({ title: t('toast.restored', { count: ids.length }), color: 'success', timeout: 3000 });
+        toast(t('toast.restored', { count: ids.length }), { variant: 'success', timeout: 3000 });
     }, [applyTrashChange, selection, t]);
 
     // 导航到收藏夹
@@ -1138,40 +1130,44 @@ export function App() {
 
                 <Modal
                     isOpen={deleteConfirmOpen}
-                    onClose={() => {
-                        setDeleteConfirmOpen(false);
-                        setDeleteConfirmIds([]);
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setDeleteConfirmOpen(false);
+                            setDeleteConfirmIds([]);
+                        }
                     }}
-                    backdrop="blur"
-                    size="sm"
                 >
-                    <ModalContent>
-                        <ModalHeader className="flex flex-col gap-1">
-                            {t('dialog.delete')}
-                        </ModalHeader>
-                        <ModalBody>
-                            <p className="text-sm text-gray-700 dark:text-gray-200">
-                                {t('dialog.deleteConfirm', { count: deleteConfirmIds.length })}
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">
-                                {t('dialog.deleteWarning')}
-                            </p>
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button
-                                variant="light"
-                                onPress={() => {
-                                    setDeleteConfirmOpen(false);
-                                    setDeleteConfirmIds([]);
-                                }}
-                            >
-                                {t('dialog.cancel')}
-                            </Button>
-                            <Button color="danger" onPress={handleConfirmDelete}>
-                                {t('dialog.delete')}
-                            </Button>
-                        </ModalFooter>
-                    </ModalContent>
+                    <Modal.Backdrop variant="blur">
+                        <Modal.Container size="sm">
+                            <Modal.Dialog>
+                                <Modal.Header className="flex flex-col gap-1">
+                                    {t('dialog.delete')}
+                                </Modal.Header>
+                                <Modal.Body>
+                                    <p className="text-sm text-gray-700 dark:text-gray-200">
+                                        {t('dialog.deleteConfirm', { count: deleteConfirmIds.length })}
+                                    </p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                        {t('dialog.deleteWarning')}
+                                    </p>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button
+                                        variant="tertiary"
+                                        onPress={() => {
+                                            setDeleteConfirmOpen(false);
+                                            setDeleteConfirmIds([]);
+                                        }}
+                                    >
+                                        {t('dialog.cancel')}
+                                    </Button>
+                                    <Button variant="danger" onPress={handleConfirmDelete}>
+                                        {t('dialog.delete')}
+                                    </Button>
+                                </Modal.Footer>
+                            </Modal.Dialog>
+                        </Modal.Container>
+                    </Modal.Backdrop>
                 </Modal>
             </DndContext>
         </div>
