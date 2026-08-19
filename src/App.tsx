@@ -5,6 +5,7 @@
 import { useMemo, useRef, useState, useCallback, useEffect, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast, Button, Modal } from '@heroui/react';
+import { Icon } from '@iconify/react';
 import {
     DndContext,
     DragOverlay,
@@ -1211,7 +1212,10 @@ export function App() {
                         <Modal.Container size="sm">
                             <Modal.Dialog>
                                 <Modal.Header className="flex flex-col gap-1">
-                                    {t('dialog.delete')}
+                                    <div className="flex items-center gap-2">
+                                        <Icon icon="lucide:trash-2" className="w-5 h-5" />
+                                        {t('dialog.delete')}
+                                    </div>
                                 </Modal.Header>
                                 <Modal.Body>
                                     <p className="text-sm text-gray-700 dark:text-gray-200">
