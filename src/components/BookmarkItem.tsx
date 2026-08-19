@@ -161,7 +161,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 }}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'h-16 w-full transition-all transition-transform border border-gray-200/50 dark:border-white/5',
+                    'h-16 w-full p-0 transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-100-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
@@ -169,7 +169,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 <Card.Content className="flex flex-row items-center gap-3 p-3">
                     {/* Icon */}
                     <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: `${node.color || folderColor}20` }}
                     >
                         {isFolder ? (
@@ -271,7 +271,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 }}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'overflow-hidden w-full transition-all transition-transform border border-gray-200/50 dark:border-white/5',
+                    'overflow-hidden w-full p-0 transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-100-rgb)_/_0.8)] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
@@ -289,7 +289,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                             {previewItems.map((item) => (
                                 <div
                                     key={item.id}
-                                    className="rounded-md overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center"
+                                    className="rounded-lg overflow-hidden bg-white dark:bg-gray-700 flex items-center justify-center"
                                 >
                                     {item.type === 'folder' ? (
                                         <Icon
@@ -308,7 +308,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                                         />
                                     ) : (
                                         <div
-                                            className="w-4 h-4 rounded-sm"
+                                            className="w-4 h-4 rounded-full"
                                             style={{ backgroundColor: item.color || '#6366f1' }}
                                         />
                                     )}
@@ -385,7 +385,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                 }}
                 onDoubleClick={onDoubleClick}
                 className={cn(
-                    'overflow-hidden w-full transition-all transition-transform border border-gray-200/50 dark:border-white/5',
+                    'overflow-hidden w-full p-0 transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
                     isSelected && 'ring-2 ring-[rgb(var(--color-primary-500-rgb))] bg-[rgb(var(--color-primary-50-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)]'
                 )}
@@ -411,7 +411,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                                 height={56}
                                 loading="lazy"
                                 decoding="async"
-                                className="w-14 h-14 rounded-lg object-contain relative z-10 bg-white/85 p-2 shadow-sm"
+                                className="w-14 h-14 rounded-full object-contain relative z-10 bg-white/85 p-2 shadow-sm"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                 }}
@@ -491,8 +491,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                         />
                     ) : (
                         <div
-                            className="w-5 h-5 rounded flex items-center justify-center"
-                            style={{ backgroundColor: node.color || '#e2e8f0' }}
+                            className="w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: `color-mix(in srgb, ${node.color || '#94a3b8'} 55%, #0f172a)` }}
                         >
                             {node.iconUrl ? (
                                 <img
@@ -581,8 +581,8 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     />
                 ) : (
                     <div
-                        className="w-5 h-5 rounded flex items-center justify-center"
-                        style={{ backgroundColor: node.color || '#e2e8f0' }}
+                        className="w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: `color-mix(in srgb, ${node.color || '#94a3b8'} 55%, #0f172a)` }}
                     >
                         {node.iconUrl ? (
                             <img
