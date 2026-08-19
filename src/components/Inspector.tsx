@@ -199,7 +199,7 @@ export const Inspector: React.FC<InspectorProps> = ({
                         {/* 悬停遮罩 */}
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <label className="cursor-pointer">
-                                <span className="inline-flex items-center justify-center h-9 px-4 text-sm text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-medium cursor-pointer">
+                                <span className="inline-flex items-center justify-center h-9 px-4 text-sm text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-full cursor-pointer">
                                     {t('inspector.changeCover')}
                                 </span>
                                 <input
