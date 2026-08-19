@@ -206,7 +206,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const { t, i18n } = useTranslation();
     const rootNode = nodes[rootId];
     const isChinese = i18n.language?.toLowerCase().startsWith('zh');
-    const copyrightOwner = isChinese ? '天空之镜' : 'HevSpecu';
+    const copyrightOwner = isChinese ? '天空之翼' : 'CelPlume';
+    const projectUrl = isChinese
+        ? 'https://celplume.hxcn.space/zh/bookmark-harbor/'
+        : 'https://celplume.hxcn.space/bookmark-harbor/';
     const currentYear = new Date().getFullYear();
 
     const rootChildren = rootNode
@@ -216,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         : [];
 
     return (
-        <aside className="w-60 flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5">
+        <aside className="w-full flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5">
             {/* Logo */}
             <div className="h-14 flex items-center px-4 flex-shrink-0">
                 <div className="w-8 h-8 rounded-lg bg-[rgb(var(--color-primary-100-rgb))] dark:bg-[rgb(var(--color-primary-900-rgb)_/_0.35)] flex items-center justify-center mr-2.5">
@@ -318,7 +321,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <div className="flex items-center gap-1">
                         <span>© {currentYear}</span>
                         <Link
-                            href="https://hevspecu.hxcn.space"
+                            href={projectUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[11px] text-gray-500 dark:text-gray-400 underline hover:underline"
