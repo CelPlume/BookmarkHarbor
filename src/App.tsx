@@ -138,6 +138,7 @@ export function App() {
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
+    const [clearDataConfirmOpen, setClearDataConfirmOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // 面板宽度（可拖拽无极调节，本地持久化）
@@ -681,6 +682,28 @@ export function App() {
         setRenamingId(null);
     }, []);
 
+    // 清除全部数据（清空 localStorage 全部键，并重置应用状态为默认）
+    const handleConfirmClearData = useCallback(() => {
+        localStorage.clear();
+        getStorage().clearAll();
+        setCurrentFolderId('root');
+        setCurrentView('bookmarks');
+        setSidebarOpen(true);
+        setInspectorOpen(false);
+        setSelectionMode(false);
+        setRenamingId(null);
+        setExpandedFolders(new Set());
+        setSortField('default');
+        setSortOrder('asc');
+        setSidebarWidth(SIDEBAR_WIDTH_DEFAULT);
+        setInspectorWidth(INSPECTOR_WIDTH_DEFAULT);
+        selection.clearSelection();
+        history.clear();
+        setSettingsOpen(false);
+        setClearDataConfirmOpen(false);
+        toast(t('toast.cleared'), { variant: 'warning', timeout: 3000 });
+    }, [history, selection, t]);
+
     // dnd-kit sensors
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -1197,6 +1220,7 @@ export function App() {
                     onCardColumnsMobileChange={handleCardColumnsMobileChange}
                     onTileColumnsDesktopChange={handleTileColumnsDesktopChange}
                     onTileColumnsMobileChange={handleTileColumnsMobileChange}
+                    onClearData={() => setClearDataConfirmOpen(true)}
                 />
 
                 <Modal
@@ -1237,6 +1261,42 @@ export function App() {
                                     </Button>
                                     <Button variant="danger" onPress={handleConfirmDelete}>
                                         {t('dialog.delete')}
+                                    </Button>
+                                </Modal.Footer>
+                            </Modal.Dialog>
+                        </Modal.Container>
+                    </Modal.Backdrop>
+                </Modal>
+
+                <Modal
+                    isOpen={clearDataConfirmOpen}
+                    onOpenChange={(open) => {
+                        if (!open) setClearDataConfirmOpen(false);
+                    }}
+                >
+                    <Modal.Backdrop variant="blur">
+                        <Modal.Container size="sm">
+                            <Modal.Dialog>
+                                <Modal.Header className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-2">
+                                        <Icon icon="lucide:trash-2" className="w-5 h-5" />
+                                        {t('dialog.clearData')}
+                                    </div>
+                                </Modal.Header>
+                                <Modal.Body>
+                                    <p className="text-sm text-gray-700 dark:text-gray-200">
+                                        {t('dialog.clearDataConfirm')}
+                                    </p>
+                                    <p className="text-xs text-red-500 dark:text-red-400">
+                                        {t('dialog.clearDataSaveWarning')}
+                                    </p>
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button variant="tertiary" onPress={() => setClearDataConfirmOpen(false)}>
+                                        {t('dialog.cancel')}
+                                    </Button>
+                                    <Button variant="danger" onPress={handleConfirmClearData}>
+                                        {t('dialog.clearData')}
                                     </Button>
                                 </Modal.Footer>
                             </Modal.Dialog>

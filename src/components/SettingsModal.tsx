@@ -58,6 +58,7 @@ interface SettingsModalProps {
     onCardColumnsMobileChange: (value: number) => void;
     onTileColumnsDesktopChange: (value: number) => void;
     onTileColumnsMobileChange: (value: number) => void;
+    onClearData: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -88,6 +89,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onCardColumnsMobileChange,
     onTileColumnsDesktopChange,
     onTileColumnsMobileChange,
+    onClearData,
 }) => {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -457,6 +459,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         <Tooltip.Content>{t('settings.customColor')}</Tooltip.Content>
                                     </Tooltip>
                                 </div>
+                            </div>
+                            <Separator className="my-4" />
+
+                            {/* 清除数据 */}
+                            <div className="space-y-2 pt-2">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-semibold text-red-500 dark:text-red-400 uppercase tracking-wider">
+                                        {t('settings.clearData')}
+                                    </h3>
+                                    <Button
+                                        variant="danger"
+                                        onPress={onClearData}
+                                    >
+                                        <Icon icon="lucide:trash-2" className="w-4 h-4" />
+                                        {t('settings.clearData')}
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {t('settings.clearDataDescription')}
+                                </p>
                             </div>
                         </Modal.Body>
                         <Modal.Footer>

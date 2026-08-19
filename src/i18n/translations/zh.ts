@@ -68,6 +68,8 @@ const zhTranslations = {
         rememberFolderView: '记忆文件夹视图',
         themeColor: '主题色',
         customColor: '自定义颜色',
+        clearData: '清除数据',
+        clearDataDescription: '清除全部书签、文件夹、收藏与设置，此操作不可撤销。',
     },
     theme: {
         light: '浅色',
@@ -128,6 +130,9 @@ const zhTranslations = {
         delete: '删除',
         deleteConfirm: '确定要删除选中的 {{count}} 个项目吗？',
         deleteWarning: '此操作无法撤销',
+        clearData: '清除数据',
+        clearDataConfirm: '即将清除浏览器中保存的全部书签、文件夹、收藏与设置。',
+        clearDataSaveWarning: '如需保留书签，请先通过「导入 / 导出」保存为 HTML 文件。',
     },
     import: {
         title: '导入书签',
@@ -179,6 +184,7 @@ const zhTranslations = {
         readLaterRemoved: '已从稍后阅读移除',
         restored: '已恢复 {{count}} 个项目',
         exportSelectionEmpty: '请先选择要导出的项目',
+        cleared: '已清除全部数据',
     },
     aria: {
         toggleSidebar: '切换侧边栏',

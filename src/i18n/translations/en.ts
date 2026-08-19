@@ -70,6 +70,8 @@ const enTranslations: Translation = {
         rememberFolderView: 'Remember folder view',
         themeColor: 'Theme color',
         customColor: 'Custom color',
+        clearData: 'Clear data',
+        clearDataDescription: 'Delete all bookmarks, folders, favorites, and settings. This cannot be undone.',
     },
     theme: {
         light: 'Light',
@@ -130,6 +132,9 @@ const enTranslations: Translation = {
         delete: 'Delete',
         deleteConfirm: 'Are you sure you want to delete {{count}} item(s)?',
         deleteWarning: 'This action cannot be undone',
+        clearData: 'Clear all data',
+        clearDataConfirm: 'This clears all bookmarks, folders, favorites, and settings stored in your browser.',
+        clearDataSaveWarning: 'To keep your bookmarks, export an HTML file with Import / Export first.',
     },
     import: {
         title: 'Import Bookmarks',
@@ -181,6 +186,7 @@ const enTranslations: Translation = {
         readLaterRemoved: 'Removed from read later',
         restored: 'Restored {{count}} item(s)',
         exportSelectionEmpty: 'Select items to export',
+        cleared: 'All data cleared',
     },
     aria: {
         toggleSidebar: 'Toggle sidebar',
