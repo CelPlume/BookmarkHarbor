@@ -75,6 +75,16 @@
   --color-text-muted: #64748b;
 }
 
+/* Toast 提示：图标与文字垂直居中，并放大默认图标 */
+[data-slot="toast"] {
+  align-items: center !important;
+}
+
+[data-slot="toast-indicator"] [data-slot="toast-default-icon"] {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
 /* 基础样式重置 */
 *,
 *::before,
