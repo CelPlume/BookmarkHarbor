@@ -5,8 +5,8 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import zhTranslations from './translations/zh.json';
-import enTranslations from './translations/en.json';
+import zhTranslations from './translations/zh';
+import enTranslations from './translations/en';
 
 // 从 localStorage 获取语言设置
 function getStoredLocale(): string {
