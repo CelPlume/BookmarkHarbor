@@ -20,20 +20,20 @@ export const httpUrlSchema = z
         } catch {
             return false;
         }
-    }, { message: 'URL must use http/https' });
+    }, { error: 'URL must use http/https' });
 
 const fileSchema = z.custom<File>((value) => value instanceof File, {
-    message: 'Invalid file',
+    error: 'Invalid file',
 });
 
 export const htmlFileSchema = fileSchema
-    .refine((file) => /\.html?$/i.test(file.name), { message: 'Only .html/.htm files are allowed' })
-    .refine((file) => file.size <= MAX_HTML_FILE_BYTES, { message: `HTML file is too large (max ${MAX_HTML_FILE_BYTES} bytes)` });
+    .refine((file) => /\.html?$/i.test(file.name), { error: 'Only .html/.htm files are allowed' })
+    .refine((file) => file.size <= MAX_HTML_FILE_BYTES, { error: `HTML file is too large (max ${MAX_HTML_FILE_BYTES} bytes)` });
 
 export const imageFileSchema = fileSchema
-    .refine((file) => file.size <= MAX_IMAGE_BYTES, { message: `Image is too large (max ${MAX_IMAGE_BYTES} bytes)` })
+    .refine((file) => file.size <= MAX_IMAGE_BYTES, { error: `Image is too large (max ${MAX_IMAGE_BYTES} bytes)` })
     .refine(
         (file) => ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'].includes(file.type),
-        { message: 'Only png/jpeg/webp/svg images are allowed' }
+        { error: 'Only png/jpeg/webp/svg images are allowed' }
     );
 
