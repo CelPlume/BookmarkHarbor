@@ -22,16 +22,15 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         /* Paths */
-        "baseUrl": ".",
         "paths": {
             "@/*": [
-                "src/*"
+                "./src/*"
             ],
             "@core/*": [
-                "src/core/*"
+                "./src/core/*"
             ],
             "@components/*": [
-                "src/components/*"
+                "./src/components/*"
             ]
         }
     },

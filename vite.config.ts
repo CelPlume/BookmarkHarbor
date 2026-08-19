@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+import tailwindcss from '@tailwindcss/vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [react()],
+    plugins: [react(), tailwindcss()],
     resolve: {
         alias: {
             '@': new URL('./src', import.meta.url).pathname,
@@ -18,13 +19,14 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         sourcemap: true,
-        minify: 'terser',
-        rollupOptions: {
+        rolldownOptions: {
             output: {
-                manualChunks: {
-                    vendor: ['react', 'react-dom'],
-                    i18n: ['i18next', 'react-i18next'],
-                    icons: ['@iconify/react'],
+                codeSplitting: {
+                    groups: [
+                        { name: 'vendor', test: /[\\/]node_modules[\\/](react|react-dom)[\\/]/ },
+                        { name: 'i18n', test: /[\\/]node_modules[\\/](i18next|react-i18next)[\\/]/ },
+                        { name: 'icons', test: /[\\/]node_modules[\\/]@iconify[\\/]/ },
+                    ],
                 },
             },
         },
