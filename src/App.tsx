@@ -456,7 +456,8 @@ export function App() {
 
     const handleDefaultViewModeChange = useCallback((mode: ViewMode) => {
         updateSettings({ defaultViewMode: mode });
-    }, [updateSettings]);
+        setViewMode(mode);
+    }, [setViewMode, updateSettings]);
 
     const handleRememberFolderViewChange = useCallback((value: boolean) => {
         if (value) {

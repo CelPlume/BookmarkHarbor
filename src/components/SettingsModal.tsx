@@ -113,7 +113,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 if (!open) onClose();
             }}
         >
-            <Modal.Backdrop>
+            <Modal.Backdrop variant="blur">
                 <Modal.Container size="md">
                     <Modal.Dialog>
                         <Modal.Header className="flex flex-col gap-1">
@@ -140,11 +140,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         onSelectionChange={(key) => {
                                             if (key) onThemeChange(key as Theme);
                                         }}
-                                        className="w-32"
+                                        className="w-52"
                                         aria-label={t('settings.theme')}
                                     >
                                         <Select.Trigger>
-                                            <Select.Value />
+                                            <Select.Value className="flex items-center gap-2" />
                                             <Select.Indicator />
                                         </Select.Trigger>
                                         <Select.Popover>
@@ -180,11 +180,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         onSelectionChange={(key) => {
                                             if (key) onLocaleChange(key as Locale);
                                         }}
-                                        className="w-32"
+                                        className="w-52"
                                         aria-label={t('settings.language')}
                                     >
                                         <Select.Trigger>
-                                            <Select.Value />
+                                            <Select.Value className="flex items-center gap-2" />
                                             <Select.Indicator />
                                         </Select.Trigger>
                                         <Select.Popover>
@@ -197,7 +197,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 </div>
                             </div>
 
-                            <Separator />
+                            <Separator className="my-4" />
 
                             {/* 行为设置 */}
                             <div className="space-y-4">
@@ -229,11 +229,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         onSelectionChange={(key) => {
                                             if (key) onSingleClickActionChange(key as SingleClickAction);
                                         }}
-                                        className="w-32"
+                                        className="w-52"
                                         aria-label={t('settings.singleClickAction')}
                                     >
                                         <Select.Trigger>
-                                            <Select.Value />
+                                            <Select.Value className="flex items-center gap-2" />
                                             <Select.Indicator />
                                         </Select.Trigger>
                                         <Select.Popover>
@@ -339,11 +339,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         onSelectionChange={(key) => {
                                             if (key) onCardFolderPreviewSizeChange(key as CardFolderPreviewSize);
                                         }}
-                                        className="w-32"
+                                        className="w-52"
                                         aria-label={t('settings.cardFolderPreviewSize')}
                                     >
                                         <Select.Trigger>
-                                            <Select.Value />
+                                            <Select.Value className="flex items-center gap-2" />
                                             <Select.Indicator />
                                         </Select.Trigger>
                                         <Select.Popover>
@@ -367,11 +367,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         onSelectionChange={(key) => {
                                             if (key) onDefaultViewModeChange(key as ViewMode);
                                         }}
-                                        className="w-32"
+                                        className="w-52"
                                         aria-label={t('settings.defaultView')}
                                     >
                                         <Select.Trigger>
-                                            <Select.Value />
+                                            <Select.Value className="flex items-center gap-2" />
                                             <Select.Indicator />
                                         </Select.Trigger>
                                         <Select.Popover>
@@ -409,7 +409,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     />
                                 </div>
                             </div>
-                            <Separator />
+                            <Separator className="my-4" />
 
                             {/* 主题色设置 */}
                             <div className="space-y-4">
