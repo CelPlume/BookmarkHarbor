@@ -2,9 +2,29 @@
  * 全局样式
  */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* 使用 .dark class 切换暗色模式 */
+@custom-variant dark (&:is(.dark *));
+
+/* 将运行时主色变量映射为 Tailwind 命名颜色（text-primary / bg-primary-500 等） */
+@theme inline {
+  --color-primary: rgb(var(--color-primary-rgb));
+  --color-primary-50: rgb(var(--color-primary-50-rgb));
+  --color-primary-100: rgb(var(--color-primary-100-rgb));
+  --color-primary-200: rgb(var(--color-primary-200-rgb));
+  --color-primary-300: rgb(var(--color-primary-300-rgb));
+  --color-primary-400: rgb(var(--color-primary-400-rgb));
+  --color-primary-500: rgb(var(--color-primary-500-rgb));
+  --color-primary-600: rgb(var(--color-primary-600-rgb));
+  --color-primary-700: rgb(var(--color-primary-700-rgb));
+  --color-primary-800: rgb(var(--color-primary-800-rgb));
+  --color-primary-900: rgb(var(--color-primary-900-rgb));
+  --color-primary-950: rgb(var(--color-primary-950-rgb));
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
 
 /* 自定义 CSS 变量 */
 :root {
