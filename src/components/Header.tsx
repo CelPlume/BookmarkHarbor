@@ -160,7 +160,7 @@ export const Header: React.FC<HeaderProps> = ({
                         name="search"
                         autoComplete="off"
                         aria-label={t('search.placeholder')}
-                        className="bg-transparent"
+                        className="bg-transparent outline-none focus:outline-none! focus:ring-0! focus:shadow-none!"
                     />
                     {searchQuery && (
                         <InputGroup.Suffix>
@@ -385,7 +385,7 @@ export const Header: React.FC<HeaderProps> = ({
                                         name="search"
                                         autoComplete="off"
                                         aria-label={t('search.placeholder')}
-                                        className="bg-transparent"
+                                        className="bg-transparent outline-none focus:outline-none! focus:ring-0! focus:shadow-none!"
                                     />
                                     {searchQuery && (
                                         <InputGroup.Suffix>
