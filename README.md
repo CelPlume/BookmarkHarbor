@@ -1,207 +1,124 @@
+<div align="center">
+
+<img src="public/favicon.svg" alt="BookmarkHarbor logo" width="96" height="96" />
+
 # BookmarkHarbor
 
-[English](#english) | [中文](#中文)
+**A file-manager-style, local-first bookmark browser with a modern UI and multilingual support**
 
-## English
+English | [中文](README_CN.md)
 
-BookmarkHarbor is an open-source, file-manager-style, local-first bookmark browser with a modern UI and multilingual support. Everything stays in your browser for privacy and speed.
+Open-source · Local-first · Privacy-safe · Modern UI · Multilingual (zh / en)
 
-### Features
+</div>
 
-Current features implemented in this repository:
+## Overview
 
-- File-manager interactions: single select, multi-select, shift range (list view), double-click to open folders/bookmarks.
-- Drag and drop: reorder within a folder, move across folders, and drag to sidebar folders with cycle detection.
-- Views: card, list, and tile view modes with per-folder view memory (optional).
-- Inspector panel: edit title, URL, color, cover, and icon; fetch metadata from URL.
-- Visual organization: theme color, per-item color, covers, and icons.
-- Favorites, Read Later, Trash: filtered views and soft-delete with restore.
-- History: undo/redo for common edits and bulk actions.
-- Import/Export: HTML bookmark format (Netscape) with multi-file import.
-- I18n: zh/en language switching.
-- Local-first persistence: everything stored in LocalStorage.
+BookmarkHarbor manages your bookmarks the way a file manager manages files. It uses folders, selection, drag-and-drop reordering, and standard editing shortcuts so you can organize a large library without learning a new paradigm. All data stays in your browser's LocalStorage; nothing is sent to a server, which keeps your bookmark collection private and offline.
 
-### UI and Interaction Rules
+The application is a single-page front end built with React and Vite. It has no backend and no account system.
 
-- Single click selects a single item.
-- Ctrl/Cmd click toggles selection.
-- Shift click selects a range in list view.
-- Double click opens a folder or launches a bookmark in a new tab.
-- Selection mode can be enabled from the toolbar; selection checkboxes appear on hover or in selection mode.
+## Before you begin
 
-### Import / Export
+| Tool | Version | Purpose |
+| :--- | :--- | :--- |
+| Node.js | 20.19 or later, or 22.12 or later | JavaScript runtime required by Vite 8 |
+| [bun](https://bun.sh/) | 1.2 or later | Package manager and task runner |
 
-- Import supports multiple HTML files at once.
-- Each imported HTML file is placed under a new folder named after the file.
-- Export supports full library, current folder, or current selection.
+This project uses `bun` as its single package manager. Do not mix npm, pnpm, or yarn lockfiles into the repository.
 
-### Settings
+## Set up for local development
 
-- Theme: light / dark / system
-- Language: zh / en
-- Theme color and custom colors
-- Auto expand folder tree
-- Default view mode
-- Remember view mode per folder
-- Card folder preview size
+1. Install the dependencies.
 
-### Data Storage
+   ```sh
+   bun install
+   ```
 
-- Storage backend: LocalStorage
-- Storage key: `aurabookmarks_data` (legacy key)
-- Soft delete is used for Trash; restore is supported.
+2. Start the development server.
 
-### Project Structure
+   ```sh
+   bun run dev
+   ```
 
-- `src/App.tsx` - Main layout and orchestration
-- `src/components/*` - UI components
-- `src/core/*` - Domain logic (storage, selection, import/export, metadata)
+The dev server starts with your browser open at `http://localhost:3000`. The application runs entirely in the browser, so you do not need to set up a database or server.
 
-### Tech Stack
+## Run the tests and checks
 
-- Vite + React + TypeScript
-- Tailwind CSS
-- HeroUI (React Aria)
-- Iconify
-- Zod
-- Bun for package management
+| Task | Command |
+| :--- | :--- |
+| Run the test suite | `bun run test` |
+| Type check | `bun run lint` (runs `tsc --noEmit`) |
+| Build for production | `bun run build` (runs `tsc -b && vite build`) |
+| Preview the production build | `bun run preview` |
 
-### Getting Started
+## Feature overview
 
-Install dependencies:
+| Area | Highlights |
+| :--- | :--- |
+| File-manager interaction | Single select, multi-select, Shift range select, double-click to open, inline rename. |
+| Views | Card, list, and tile views with per-folder view memory (optional). |
+| Drag and drop | Reorder within a folder, move across folders, drop onto sidebar folders, with cycle detection. |
+| Inspector | Edit title, URL, color, cover, and icon; fetch metadata and favicon from the URL. |
+| Visual organization | Theme color, per-item color, covers, and icons. |
+| Filtered views | Favorites, Read Later, and Trash with soft-delete and restore. |
+| History | Undo and redo for common edits and bulk actions. |
+| Import / Export | Netscape HTML bookmark import (multi-file) and export (all, folder, or selection). |
+| Internationalization | Chinese and English, switchable at runtime. |
+| Local-first persistence | Everything stays in LocalStorage; no server or account. |
 
-```bash
-bun install
+## Data storage
+
+- Storage backend: `LocalStorage`.
+- Primary key: `aurabookmarks_data` (JSON, versioned).
+- Panel widths: `aurabookmarks_panel_widths` (sidebar and inspector width in pixels).
+- Trash uses soft-delete; deleted items move to Trash and you can restore or hard-delete them.
+- Clear data: available from Settings behind a confirmation dialog; it wipes every key in `localStorage` and resets the library to defaults.
+
+The default settings are: `locale: zh`, `theme: system`, `viewMode: card`, `themeColor: #3B82F6`, `singleClickAction: select`. See [settings](docs/UI.md#settings) for every option.
+
+## Import and export
+
+- Import accepts one or more `.html`/`.htm` Netscape bookmark files (limit 5 MB each).
+- Each imported file becomes a folder named after the file (extension removed).
+- Export supports three scopes: the whole library, the current folder, or the current selection.
+- The upload limit for covers and icons is 200 KB (png, jpeg, webp, svg).
+
+## Project structure
+
+```
+BookmarkHarbor/
+├── index.html               # App shell, meta tags, analytics script
+├── public/favicon.svg        # Brand mark
+├── src/
+│   ├── main.tsx              # Entry point
+│   ├── providers.tsx         # HeroUI Toast provider
+│   ├── App.tsx               # App shell, state, orchestration
+│   ├── components/           # React UI components
+│   ├── core/                 # Framework-free domain logic and hooks
+│   ├── i18n/                 # i18next resources (zh, en)
+│   ├── styles/index.css      # Tailwind 4, HeroUI styles, theme variables
+│   └── test/                 # Vitest unit tests
+├── docs/                     # Documentation (English + 中文)
+├── vite.config.ts            # Vite 8 (Rolldown) configuration
+├── vitest.config.ts          # Vitest configuration
+├── wrangler.jsonc            # Cloudflare Pages / static assets config
+└── package.json
 ```
 
-Start dev server:
+## Documentation
 
-```bash
-bun run dev
-```
+| Guide | Contents |
+| :--- | :--- |
+| [Architecture](docs/ARCHITECTURE.md) | Data model, domain modules, state, design decisions, theming. |
+| [Development guide](docs/DEVELOPMENT.md) | Local setup, scripts, code conventions, testing, commit convention. |
+| [Frontend guide](docs/UI.md) | Views, layout, interactions, keyboard shortcuts, settings, accessibility. |
+| [Deployment guide](docs/DEPLOYMENT.md) | Production build, Cloudflare Pages, and static hosting. |
 
-Build for production:
+Each guide has a Chinese version: `docs/*_CN.md`.
 
-```bash
-bun run build
-```
+## What's next
 
-Preview production build:
-
-```bash
-bun run preview
-```
-
-### Testing and Type Check
-
-```bash
-bun run test
-bun run lint
-```
-
-### Metadata Fetching Notes
-
-Metadata fetch is done on the client. Some sites may block requests due to CORS. In that case the app falls back to favicon heuristics where possible.
-
----
-
-## 中文
-
-书签浏览器（BookmarkHarbor）是文件管理器风格的本地书签管理器，开源、现代美观，支持多语言。所有数据完全保存在本地，隐私更安全。
-
-### 功能
-
-当前仓库已实现的能力包括：
-
-- 文件管理器式交互：单选、多选、列表视图范围选择、双击打开文件夹/书签。
-- 拖拽：同级排序、跨文件夹移动、拖到侧边栏文件夹，包含循环检测。
-- 视图：卡片 / 列表 / 平铺三种视图，可选按文件夹记忆视图。
-- 属性面板：编辑标题、URL、颜色、封面与图标；支持从 URL 抓取元信息。
-- 视觉组织：主题色、单项颜色、封面与图标。
-- 收藏夹 / 稍后阅读 / 回收站：过滤视图与软删除/恢复。
-- 历史记录：常见操作的撤销/重做。
-- 导入/导出：支持 HTML 书签格式（Netscape），可多文件导入。
-- 国际化：中英文切换。
-- 本地持久化：数据存储在 LocalStorage。
-
-### 交互规则
-
-- 单击选中一个项目。
-- Ctrl/Cmd + 单击切换多选。
-- 列表视图下 Shift + 单击范围选择。
-- 双击进入文件夹或在新标签打开书签。
-- 可从工具栏进入选择模式，悬停或选择模式下显示勾选框。
-
-### 导入 / 导出
-
-- 支持一次导入多个 HTML 文件。
-- 每个 HTML 文件会导入到一个同名文件夹中。
-- 导出范围支持：全部、当前文件夹、当前选择。
-
-### 设置
-
-- 主题：浅色 / 深色 / 跟随系统
-- 语言：中文 / English
-- 主题色与自定义颜色
-- 自动展开目录树
-- 默认视图模式
-- 记忆文件夹视图
-- 卡片视图文件夹预览尺寸
-
-### 数据存储
-
-- 存储后端：LocalStorage
-- 存储键：`aurabookmarks_data`（历史键）
-- 回收站使用软删除，可恢复。
-
-### 项目结构
-
-- `src/App.tsx` - 主布局与协调逻辑
-- `src/components/*` - UI 组件
-- `src/core/*` - 领域逻辑（存储、选择、导入导出、元信息抓取）
-
-### 技术栈
-
-- Vite + React + TypeScript
-- Tailwind CSS
-- HeroUI (React Aria)
-- Iconify
-- Zod
-- Bun
-
-### 快速开始
-
-安装依赖：
-
-```bash
-bun install
-```
-
-启动开发：
-
-```bash
-bun run dev
-```
-
-构建生产包：
-
-```bash
-bun run build
-```
-
-预览构建结果：
-
-```bash
-bun run preview
-```
-
-### 测试与类型检查
-
-```bash
-bun run test
-bun run lint
-```
-
-### 元信息抓取说明
-
-元信息抓取在客户端执行。部分站点可能因 CORS 限制而失败，此时会尝试回退到 favicon 规则。
+- Read the [architecture guide](docs/ARCHITECTURE.md) to understand the data model and domain modules.
+- Set up a local environment with the steps above.
+- Review the [frontend guide](docs/UI.md) for interaction rules and settings.
