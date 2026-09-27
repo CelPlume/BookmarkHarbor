@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getStorage, StorageAdapter } from '../storage';
-import type { Node, CreateNodeRequest, UpdateNodeRequest, MoveNodesRequest, ViewMode, Theme, Locale } from '../types';
+import type { Node, CreateNodeRequest, UpdateNodeRequest, MoveNodesRequest, ViewMode, Theme, Locale, AutoOrganizeRule } from '../types';
 
 /**
  * 使用存储适配器
@@ -102,6 +102,50 @@ export function useSettings() {
     }, [storage]);
 
     return { settings, updateSettings };
+}
+
+/**
+ * 自动整理规则：读取 + 增删改
+ *
+ * 规则的持久化放在 storage 里（和节点同一次写入），
+ * 这里只做订阅与把方法包成 useCallback。
+ */
+export function useRules() {
+    const storage = useStorage();
+    const [rules, setRules] = useState<AutoOrganizeRule[]>(() => storage.getRules());
+
+    useEffect(() => {
+        const update = () => setRules(storage.getRules());
+        // 订阅后立即同步一次，避免挂载期间错过变更
+        update();
+        return storage.subscribe(update);
+    }, [storage]);
+
+    const addRule = useCallback(
+        (rule: Omit<AutoOrganizeRule, 'priority' | 'createdAt' | 'updatedAt'>) =>
+            storage.addRule(rule),
+        [storage]
+    );
+
+    const updateRule = useCallback(
+        (id: string, patch: Partial<AutoOrganizeRule>) => storage.updateRule(id, patch),
+        [storage]
+    );
+
+    const deleteRule = useCallback((id: string) => storage.deleteRule(id), [storage]);
+
+    const reorderRules = useCallback(
+        (orderedIds: string[]) => storage.reorderRules(orderedIds),
+        [storage]
+    );
+
+    const replaceRule = useCallback(
+        (fromId: string, additions: AutoOrganizeRule[]) =>
+            storage.replaceRule(fromId, additions),
+        [storage]
+    );
+
+    return { rules, addRule, updateRule, deleteRule, reorderRules, replaceRule };
 }
 
 /**

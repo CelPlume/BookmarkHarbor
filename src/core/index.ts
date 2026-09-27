@@ -58,6 +58,14 @@ export {
     isValidTargetFolder,
 } from './rules';
 
+// Rule templates
+export {
+    RULE_TEMPLATE_GROUPS,
+    instantiateTemplate,
+    isUsableTemplate,
+} from './ruleTemplates';
+export type { RuleTemplate, RuleTemplateGroup } from './ruleTemplates';
+
 // Storage
 export * from './storage';
 

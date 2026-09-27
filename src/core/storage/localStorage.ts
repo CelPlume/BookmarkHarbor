@@ -601,6 +601,35 @@ export class StorageAdapter {
     }
 
     /**
+     * 批量替换：删除 fromId，插入 additions
+     *
+     * 去掉一条宽泛规则再补上几条更具体的，是个整体动作——
+     * 分两次调用会让订阅者看到中间态。
+     */
+    replaceRule(fromId: string, additions: AutoOrganizeRule[]): void {
+        const now = Date.now();
+        const existing = this.data.rules ?? [];
+        const index = existing.findIndex(r => r.id === fromId);
+        if (index < 0) return;
+
+        const maxPriority = existing.reduce((max, r) => Math.max(max, r.priority), 0);
+
+        const stamped = additions.map((rule, offset) => ({
+            ...rule,
+            priority: maxPriority + offset + 1,
+            createdAt: now,
+            updatedAt: now,
+        }));
+
+        this.data.rules = [
+            ...existing.slice(0, index),
+            ...stamped,
+            ...existing.slice(index + 1),
+        ];
+        this.save();
+    }
+
+    /**
      * 新增一条规则，追加到优先级末尾
      */
     addRule(rule: Omit<AutoOrganizeRule, 'priority' | 'createdAt' | 'updatedAt'>): AutoOrganizeRule {
