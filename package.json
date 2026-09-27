@@ -1,5 +1,5 @@
 {
-  "name": "aurabookmarks",
+  "name": "bookmarkharbor",
   "description": "书签浏览器：像文件管理器一样管理书签，完全本地存储、隐私安全，开源，界面现代美观，支持多语言。 BookmarkHarbor is an open-source, file-manager-style, local-first bookmark browser with a modern UI and multilingual support.",
   "private": true,
   "version": "0.1.0",

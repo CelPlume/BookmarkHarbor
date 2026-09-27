@@ -1,5 +1,5 @@
 /**
- * AuraBookmarks 入口文件
+ * BookmarkHarbor 入口文件
  */
 
 import React from 'react';

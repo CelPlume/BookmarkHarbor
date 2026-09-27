@@ -1,5 +1,5 @@
 /**
- * AuraBookmarks 主应用组件
+ * BookmarkHarbor 主应用组件
  */
 
 import { useMemo, useRef, useState, useCallback, useEffect, type CSSProperties } from 'react';

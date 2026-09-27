@@ -1,6 +1,5 @@
 /**
- * AuraBookmarks 核心类型定义
- * 基于 spec/01-requirements.md 和 spec/02-design.md
+ * BookmarkHarbor 核心类型定义
  */
 
 // 节点类型

@@ -1,6 +1,5 @@
 /**
  * LocalStorage 存储适配器
- * 实现 spec/02-design.md#5 中定义的存储接口
  */
 
 import type {
