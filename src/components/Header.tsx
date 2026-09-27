@@ -36,6 +36,7 @@ interface HeaderProps {
     onExport: (scope: ExportScope) => void;
     onFindDuplicates: () => void;
     onOrganize: () => void;
+    onInsights: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -59,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
     onExport,
     onFindDuplicates,
     onOrganize,
+    onInsights,
 }) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -351,6 +353,17 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                         <Icon icon="lucide:wand-sparkles" className="w-4 h-4" aria-hidden="true" />
                     </Button>
+
+                    {/* 书签体检 */}
+                    <Button
+                        isIconOnly
+                        variant="tertiary"
+                        size="sm"
+                        onPress={onInsights}
+                        aria-label={t('insights.entry')}
+                    >
+                        <Icon icon="lucide:stethoscope" className="w-4 h-4" aria-hidden="true" />
+                    </Button>
                 </div>
                 <input
                     ref={fileInputRef}
@@ -396,6 +409,9 @@ export const Header: React.FC<HeaderProps> = ({
                                         case 'organize':
                                             onOrganize();
                                             break;
+                                        case 'insights':
+                                            onInsights();
+                                            break;
                                     }
                                 }}
                             >
@@ -422,6 +438,10 @@ export const Header: React.FC<HeaderProps> = ({
                                 <Dropdown.Item id="organize">
                                     <Icon icon="lucide:wand-sparkles" className="w-4 h-4" />
                                     {t('organize.entry')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="insights">
+                                    <Icon icon="lucide:stethoscope" className="w-4 h-4" />
+                                    {t('insights.entry')}
                                 </Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown.Popover>

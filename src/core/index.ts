@@ -79,6 +79,17 @@ export {
 } from './vault';
 export type { EncryptedVault } from './vault';
 
+// Insights（书签体检）
+export {
+    STALE_DAYS,
+    listBookmarks,
+    isStale,
+    buildLibraryReport,
+    describeLastUse,
+    listPinned,
+} from './insights';
+export type { LibraryReport } from './insights';
+
 // Storage
 export * from './storage';
 

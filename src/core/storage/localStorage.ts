@@ -611,6 +611,25 @@ export class StorageAdapter {
     }
 
     /**
+     * 记录一次"打开"
+     *
+     * 刻意不走 updateNode，也刻意不进撤销栈：
+     * - 不改 updatedAt——打开不是编辑，改了会让"最近修改"排序失真
+     * - 不进历史——用户不会想撤销一次"打开"，而且它发生得极频繁
+     */
+    markNodeUsed(id: string): void {
+        const node = this.data.nodes[id];
+        if (!node || node.deletedAt || node.type !== 'bookmark') return;
+
+        this.data.nodes[id] = {
+            ...node,
+            useCount: (node.useCount ?? 0) + 1,
+            lastUsedAt: Date.now(),
+        };
+        this.save();
+    }
+
+    /**
      * 移动节点（支持批量）
      */
     moveNodes(request: MoveNodesRequest): boolean {

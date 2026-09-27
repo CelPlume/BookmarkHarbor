@@ -30,6 +30,17 @@ export interface Node {
     tags?: string[];
     isFavorite?: boolean;
     isReadLater?: boolean;
+    /**
+     * 从本软件打开过多少次
+     *
+     * 浏览器书签只记录"存了什么"，不记录"用了什么"。这两个字段让软件
+     * 能回答一个此前无法回答的问题：这个库里到底哪些书签是活的。
+     */
+    useCount?: number;
+    /** 最近一次打开的时间（Unix ms） */
+    lastUsedAt?: number;
+    /** 是否固定到书签栏（一处引用，不复制节点） */
+    isPinned?: boolean;
     createdAt: number; // Unix timestamp (ms)
     updatedAt: number;
     deletedAt?: number | null; // 软删除

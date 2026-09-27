@@ -58,6 +58,7 @@ import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
 import { DuplicatesModal } from './components/DuplicatesModal';
 import { OrganizeModal } from './components/OrganizeModal';
+import { InsightsModal } from './components/InsightsModal';
 import { LockScreen } from './components/LockScreen';
 import { VaultSetupModal } from './components/VaultSetupModal';
 import { ContextMenu, type ContextMenuState } from './components/ContextMenu';
@@ -161,6 +162,7 @@ export function App() {
     const [clearDataConfirmOpen, setClearDataConfirmOpen] = useState(false);
     const [duplicatesOpen, setDuplicatesOpen] = useState(false);
     const [organizeOpen, setOrganizeOpen] = useState(false);
+    const [insightsOpen, setInsightsOpen] = useState(false);
     const [vaultModalOpen, setVaultModalOpen] = useState(false);
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
     const [moveToOpen, setMoveToOpen] = useState(false);
@@ -616,9 +618,12 @@ export function App() {
         if (node.type === 'folder') {
             handleNavigate(node.id);
         } else if (node.url && node.url.startsWith('http')) {
+            // 记一次使用。放在打开动作之前：弹窗被浏览器拦截时用户
+            // 其实也没用上这个书签，但计入一次的影响远小于漏计
+            storage.markNodeUsed(node.id);
             window.open(node.url, '_blank');
         }
-    }, [handleNavigate]);
+    }, [handleNavigate, storage]);
 
     // 右键菜单
     //
@@ -792,6 +797,60 @@ export function App() {
             timeout: 3000,
         });
     }, [nodes, updateNode, moveNodes, history, selection, t]);
+
+    // 体检里把选中的书签归档
+    //
+    // 没有现成的「归档」文件夹时自动建一个放在根目录下，
+    // 用户不必先手动建好再回来操作。
+    const handleArchiveBookmarks = useCallback((nodeIds: string[]) => {
+        if (nodeIds.length === 0) return;
+
+        const archiveName = t('insights.archiveFolderName');
+        const existing = Object.values(nodes).find(
+            n => n.type === 'folder' && n.parentId === 'root' && !n.deletedAt && n.title === archiveName
+        );
+
+        const targetId = existing
+            ? existing.id
+            : createNode({ type: 'folder', parentId: 'root', title: archiveName }).id;
+
+        // 记录原位置，供撤销还原
+        const snapshot = nodeIds
+            .map(id => nodes[id])
+            .filter(Boolean)
+            .map(node => {
+                const siblings = Object.values(nodes)
+                    .filter(n => n.parentId === node.parentId && !n.deletedAt)
+                    .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+                const index = siblings.findIndex(n => n.id === node.id);
+                return {
+                    id: node.id,
+                    parentId: node.parentId,
+                    beforeId: index >= 0 ? siblings[index + 1]?.id : undefined,
+                };
+            })
+            .filter(item => item.parentId !== null);
+
+        moveNodes({ nodeIds, toParentId: targetId });
+
+        history.record({
+            label: 'archive',
+            undo: () => {
+                snapshot.forEach(({ id, parentId, beforeId }) => {
+                    moveNodes({ nodeIds: [id], toParentId: parentId as string, beforeId });
+                });
+            },
+            redo: () => {
+                moveNodes({ nodeIds, toParentId: targetId });
+            },
+        });
+
+        selection.clearSelection();
+        toast(t('insights.archived', { count: nodeIds.length }), {
+            variant: 'success',
+            timeout: 3000,
+        });
+    }, [nodes, createNode, moveNodes, history, selection, t]);
 
     // 新建文件夹
     const handleNewFolder = useCallback(() => {
@@ -1343,6 +1402,7 @@ export function App() {
                 onExport={handleExport}
                 onFindDuplicates={() => setDuplicatesOpen(true)}
                 onOrganize={() => setOrganizeOpen(true)}
+                onInsights={() => setInsightsOpen(true)}
             />
 
             <DndContext
@@ -1627,6 +1687,13 @@ export function App() {
                     onApply={handleApplyOrganize}
                 />
 
+                <InsightsModal
+                    isOpen={insightsOpen}
+                    nodes={nodes}
+                    onClose={() => setInsightsOpen(false)}
+                    onArchive={handleArchiveBookmarks}
+                />
+
                 <VaultSetupModal
                     isOpen={vaultModalOpen}
                     encrypted={storage.isEncrypted()}
@@ -1647,7 +1714,8 @@ export function App() {
                     onClose={() => setContextMenu(null)}
                     onOpen={handleDoubleClick}
                     onOpenInNewTab={(node) => {
-                        if (node.url) window.open(node.url, '_blank');
+                        // 走同一个入口，保证从右键打开也计入使用记录
+                        if (node.url) handleDoubleClick(node);
                     }}
                     onRename={(node) => setRenamingId(node.id)}
                     onEdit={handleContextEdit}
