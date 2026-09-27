@@ -24,6 +24,17 @@ export { collectTagCounts, filterByTags, normalizeTag, appendTag, removeTag } fr
 export { normalizeUrl, findDuplicateGroups, planMerge, planMergeAll, TRACKING_PARAMS } from './dedupe';
 export type { DuplicateGroup, MergePlan, MergeStrategy } from './dedupe';
 
+// Cover
+export {
+    fnv1a,
+    colorSeedFor,
+    hueFor,
+    colorsFor,
+    initialFrom,
+    generateCoverDataUrl,
+    withGeneratedCover,
+} from './cover';
+
 // Storage
 export * from './storage';
 
