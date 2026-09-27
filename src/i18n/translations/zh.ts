@@ -135,6 +135,7 @@ const zhTranslations = {
         noResults: '未找到相关书签',
         scopeAll: '全部',
         scopeCurrent: '当前文件夹',
+        scope: '搜索范围',
     },
     empty: {
         title: '暂无内容',

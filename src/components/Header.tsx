@@ -8,6 +8,8 @@ import {
     InputGroup,
     Dropdown,
     Modal,
+    Select,
+    ListBox,
 } from '@heroui/react';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +17,8 @@ import type { Theme, Locale, ExportScope } from '../core/types';
 
 interface HeaderProps {
     searchQuery: string;
+    searchScope: 'all' | 'current';
+    onSearchScopeChange: (scope: 'all' | 'current') => void;
     onSearchChange: (query: string) => void;
     searchInputRef: React.RefObject<HTMLInputElement | null>;
     theme: Theme;
@@ -35,6 +39,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
     searchQuery,
+    searchScope,
+    onSearchScopeChange,
     onSearchChange,
     searchInputRef,
     theme,
@@ -148,8 +154,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* 中间搜索框 */}
-            <div className="hidden sm:flex max-w-md flex-1 px-8">
-                <InputGroup className="hidden sm:flex max-w-md flex-1 px-8 bg-gray-100 dark:bg-gray-800 rounded-full">
+            <div className="hidden sm:flex items-center gap-2 flex-1 px-8">
+                <InputGroup className="flex flex-1 bg-gray-100 dark:bg-gray-800 rounded-full">
                     <InputGroup.Prefix>
                         <Icon icon="lucide:search" className="text-gray-400" aria-hidden="true" />
                     </InputGroup.Prefix>
@@ -178,6 +184,33 @@ export const Header: React.FC<HeaderProps> = ({
                         </InputGroup.Suffix>
                     )}
                 </InputGroup>
+
+                {/* 搜索范围：全部书签 / 当前文件夹 */}
+                <Select
+                    selectedKey={searchScope}
+                    onSelectionChange={(key) => {
+                        if (key) onSearchScopeChange(key as 'all' | 'current');
+                    }}
+                    className="w-32 flex-shrink-0"
+                    aria-label={t('search.scope')}
+                >
+                    <Select.Trigger>
+                        <Select.Value />
+                        <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                        <ListBox>
+                            <ListBox.Item id="all" textValue={t('search.scopeAll')}>
+                                {t('search.scopeAll')}
+                                <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                            <ListBox.Item id="current" textValue={t('search.scopeCurrent')}>
+                                {t('search.scopeCurrent')}
+                                <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                        </ListBox>
+                    </Select.Popover>
+                </Select>
             </div>
 
             {/* 右侧控件 */}

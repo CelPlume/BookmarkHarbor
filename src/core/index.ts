@@ -35,6 +35,17 @@ export {
     withGeneratedCover,
 } from './cover';
 
+// Search
+export {
+    parseQuery,
+    isQueryEmpty,
+    getPinyinIndex,
+    clearPinyinCache,
+    matchNode,
+    searchNodes,
+} from './search';
+export type { ParsedQuery, PinyinIndex, MatchField, ScoredMatch } from './search';
+
 // Storage
 export * from './storage';
 

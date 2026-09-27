@@ -137,6 +137,7 @@ const enTranslations: Translation = {
         noResults: 'No bookmarks found',
         scopeAll: 'All',
         scopeCurrent: 'Current Folder',
+        scope: 'Search scope',
     },
     empty: {
         title: 'No Content',

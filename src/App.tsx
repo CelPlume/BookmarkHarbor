@@ -43,6 +43,8 @@ import { exportAndDownload } from './core/importExport/htmlExporter';
 import { generateOrderKey } from './core/orderKey';
 import { filterByTags } from './core/tags';
 import type { MergePlan } from './core/dedupe';
+import { parseQuery, isQueryEmpty, searchNodes } from './core/search';
+import { getDescendantIds } from './core/cycleDetection';
 
 // Components
 import { Header } from './components/Header';
@@ -134,6 +136,7 @@ export function App() {
     const [inspectorOpen, setInspectorOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTags, setActiveTags] = useState<string[]>([]);
+    const [searchScope, setSearchScope] = useState<'all' | 'current'>('all');
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -380,19 +383,24 @@ export function App() {
                 pool = filterByTags(nodes, activeTags);
             }
 
-            if (!searchQuery) return pool;
+            if (!searchQuery.trim()) return pool;
 
-            const query = searchQuery.toLowerCase();
-            const searchSource = currentView === 'bookmarks' && activeTags.length === 0
+            const query = parseQuery(searchQuery);
+            if (isQueryEmpty(query)) return pool;
+
+            // 搜索范围：全部书签 / 仅当前文件夹的后代
+            const candidates = currentView === 'bookmarks' && searchScope === 'all' && activeTags.length === 0
                 ? Object.values(nodes).filter(n => !n.deletedAt && n.id !== 'root')
-                : pool;
+                : currentView === 'bookmarks' && searchScope === 'current'
+                    ? Object.values(nodes).filter(n =>
+                        !n.deletedAt
+                        && n.id !== 'root'
+                        && (n.parentId === currentFolderId
+                            || getDescendantIds(nodes, currentFolderId).has(n.id))
+                    )
+                    : pool;
 
-            return searchSource
-                .filter(n =>
-                    n.title.toLowerCase().includes(query) ||
-                    (n.url && n.url.toLowerCase().includes(query))
-                )
-                .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+            return searchNodes(candidates, query);
         })();
 
         if (sortField === 'default') return source;
@@ -432,7 +440,7 @@ export function App() {
         });
 
         return sorted;
-    }, [baseNodes, currentView, nodes, searchQuery, activeTags, sortField, sortOrder]);
+    }, [baseNodes, currentView, nodes, searchQuery, activeTags, searchScope, currentFolderId, sortField, sortOrder]);
 
     const isSortableView = currentView === 'bookmarks' && !searchQuery && activeTags.length === 0 && sortField === 'default';
 
@@ -1226,6 +1234,8 @@ export function App() {
             <Header
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                searchScope={searchScope}
+                onSearchScopeChange={setSearchScope}
                 searchInputRef={searchInputRef}
                 theme={theme}
                 onThemeChange={setTheme}
