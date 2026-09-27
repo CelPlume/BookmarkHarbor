@@ -134,6 +134,12 @@ export function useRules() {
 
     const deleteRule = useCallback((id: string) => storage.deleteRule(id), [storage]);
 
+    const addRules = useCallback(
+        (partials: Array<Omit<AutoOrganizeRule, 'priority' | 'createdAt' | 'updatedAt'>>) =>
+            storage.addRules(partials),
+        [storage]
+    );
+
     const reorderRules = useCallback(
         (orderedIds: string[]) => storage.reorderRules(orderedIds),
         [storage]
@@ -145,7 +151,7 @@ export function useRules() {
         [storage]
     );
 
-    return { rules, addRule, updateRule, deleteRule, reorderRules, replaceRule };
+    return { rules, addRule, addRules, updateRule, deleteRule, reorderRules, replaceRule };
 }
 
 /**

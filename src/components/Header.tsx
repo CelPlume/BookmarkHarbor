@@ -35,6 +35,7 @@ interface HeaderProps {
     onImport: (files: FileList) => void;
     onExport: (scope: ExportScope) => void;
     onFindDuplicates: () => void;
+    onOrganize: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -57,6 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
     onImport,
     onExport,
     onFindDuplicates,
+    onOrganize,
 }) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -338,6 +340,17 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                         <Icon icon="lucide:copy-check" className="w-4 h-4" aria-hidden="true" />
                     </Button>
+
+                    {/* 自动整理 */}
+                    <Button
+                        isIconOnly
+                        variant="tertiary"
+                        size="sm"
+                        onPress={onOrganize}
+                        aria-label={t('organize.entry')}
+                    >
+                        <Icon icon="lucide:wand-sparkles" className="w-4 h-4" aria-hidden="true" />
+                    </Button>
                 </div>
                 <input
                     ref={fileInputRef}
@@ -380,6 +393,9 @@ export const Header: React.FC<HeaderProps> = ({
                                         case 'findDuplicates':
                                             onFindDuplicates();
                                             break;
+                                        case 'organize':
+                                            onOrganize();
+                                            break;
                                     }
                                 }}
                             >
@@ -402,6 +418,10 @@ export const Header: React.FC<HeaderProps> = ({
                                 <Dropdown.Item id="findDuplicates">
                                     <Icon icon="lucide:copy-check" className="w-4 h-4" />
                                     {t('duplicates.find')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="organize">
+                                    <Icon icon="lucide:wand-sparkles" className="w-4 h-4" />
+                                    {t('organize.entry')}
                                 </Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown.Popover>

@@ -32,6 +32,7 @@ import {
     useKeyboardShortcuts,
     useHistory,
     useSettings,
+    useRules,
     getStorage,
     buildBreadcrumbs,
     htmlFileSchema,
@@ -43,6 +44,8 @@ import { exportAndDownload } from './core/importExport/htmlExporter';
 import { generateOrderKey } from './core/orderKey';
 import { filterByTags } from './core/tags';
 import type { MergePlan } from './core/dedupe';
+import type { OrganizePreview } from './core/types';
+import { instantiateTemplate } from './core/ruleTemplates';
 import { parseQuery, isQueryEmpty, searchNodes } from './core/search';
 import { getDescendantIds } from './core/cycleDetection';
 
@@ -54,6 +57,7 @@ import { ContentArea } from './components/ContentArea';
 import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
 import { DuplicatesModal } from './components/DuplicatesModal';
+import { OrganizeModal } from './components/OrganizeModal';
 import { ContextMenu, type ContextMenuState } from './components/ContextMenu';
 import { MoveToModal } from './components/MoveToModal';
 import { PanelResizer } from './components/PanelResizer';
@@ -129,6 +133,7 @@ export function App() {
     const [viewMode, setViewMode] = useViewMode();
     const [locale, setLocale] = useLocale();
     const { settings, updateSettings } = useSettings();
+    const { rules, addRule, addRules, updateRule, deleteRule, reorderRules } = useRules();
 
     // 状态
     const [currentFolderId, setCurrentFolderId] = useState('root');
@@ -149,6 +154,7 @@ export function App() {
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const [clearDataConfirmOpen, setClearDataConfirmOpen] = useState(false);
     const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+    const [organizeOpen, setOrganizeOpen] = useState(false);
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
     const [moveToOpen, setMoveToOpen] = useState(false);
     const [moveTargetIds, setMoveTargetIds] = useState<string[]>([]);
@@ -717,6 +723,69 @@ export function App() {
         toast(t('toast.moved'), { variant: 'success', timeout: 3000 });
     }, [moveTargetIds, moveNodes, nodes, history, selection, t]);
 
+    // 执行自动整理
+    //
+    // 整批只记一条历史：撤销时把字段还原、并把移动过的书签移回原处，
+    // 否则用户要按几十次 Ctrl+Z 才能退回去。
+    const handleApplyOrganize = useCallback((preview: OrganizePreview) => {
+        if (preview.affectedCount === 0) return;
+
+        // 记录移动前的父节点与后继节点，供撤销还原位置
+        const moveSnapshot = preview.moves.map(({ id }) => {
+            const node = nodes[id];
+            if (!node) return null;
+            const siblings = Object.values(nodes)
+                .filter(n => n.parentId === node.parentId && !n.deletedAt)
+                .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+            const index = siblings.findIndex(n => n.id === id);
+            return {
+                id,
+                parentId: node.parentId,
+                beforeId: index >= 0 ? siblings[index + 1]?.id : undefined,
+            };
+        }).filter((s): s is NonNullable<typeof s> => s !== null && s.parentId !== null);
+
+        const before: Array<{ id: string; patch: UpdatePatch }> = preview.patches.map(({ id }) => {
+            const node = nodes[id];
+            return {
+                id,
+                patch: {
+                    tags: node?.tags,
+                    isFavorite: node?.isFavorite,
+                    isReadLater: node?.isReadLater,
+                },
+            };
+        });
+
+        // 落库：先字段更新，再移动
+        preview.patches.forEach(({ id, patch }) => updateNode(id, patch));
+        preview.moves.forEach(({ id, toFolderId }) => {
+            moveNodes({ nodeIds: [id], toParentId: toFolderId });
+        });
+
+        history.record({
+            label: 'organize',
+            undo: () => {
+                before.forEach(({ id, patch }) => updateNode(id, patch));
+                moveSnapshot.forEach(({ id, parentId, beforeId }) => {
+                    moveNodes({ nodeIds: [id], toParentId: parentId as string, beforeId });
+                });
+            },
+            redo: () => {
+                preview.patches.forEach(({ id, patch }) => updateNode(id, patch));
+                preview.moves.forEach(({ id, toFolderId }) => {
+                    moveNodes({ nodeIds: [id], toParentId: toFolderId });
+                });
+            },
+        });
+
+        selection.clearSelection();
+        toast(t('organize.done', { count: preview.affectedCount }), {
+            variant: 'success',
+            timeout: 3000,
+        });
+    }, [nodes, updateNode, moveNodes, history, selection, t]);
+
     // 新建文件夹
     const handleNewFolder = useCallback(() => {
         const newNode = createNode({
@@ -1251,6 +1320,7 @@ export function App() {
                 onImport={handleImport}
                 onExport={handleExport}
                 onFindDuplicates={() => setDuplicatesOpen(true)}
+                onOrganize={() => setOrganizeOpen(true)}
             />
 
             <DndContext
@@ -1509,6 +1579,24 @@ export function App() {
                         setMoveTargetIds([]);
                     }}
                     onMove={handleConfirmMoveTo}
+                />
+
+                <OrganizeModal
+                    isOpen={organizeOpen}
+                    nodes={nodes}
+                    rules={rules}
+                    onClose={() => setOrganizeOpen(false)}
+                    onAddRule={addRule}
+                    onUpdateRule={updateRule}
+                    onDeleteRule={deleteRule}
+                    onReorder={reorderRules}
+                    onAddTemplate={(group) => {
+                        const groupLabel = t(`organize.templateGroup_${group.key}`);
+                        addRules(instantiateTemplate(group, groupLabel, key =>
+                            t(`organize.templateRule_${key}`)
+                        ));
+                    }}
+                    onApply={handleApplyOrganize}
                 />
 
                 <ContextMenu

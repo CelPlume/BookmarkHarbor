@@ -601,6 +601,30 @@ export class StorageAdapter {
     }
 
     /**
+     * 批量追加规则（从模板展开时用）
+     *
+     * 一次性写入而不是循环调 addRule：循环会触发多次 save 与通知，
+     * 界面会看到规则一条条蹦出来。
+     */
+    addRules(partials: Array<Omit<AutoOrganizeRule, 'priority' | 'createdAt' | 'updatedAt'>>): void {
+        if (partials.length === 0) return;
+
+        const now = Date.now();
+        const existing = this.data.rules ?? [];
+        const maxPriority = existing.reduce((max, r) => Math.max(max, r.priority), 0);
+
+        const created = partials.map((rule, offset) => ({
+            ...rule,
+            priority: maxPriority + offset + 1,
+            createdAt: now,
+            updatedAt: now,
+        }));
+
+        this.data.rules = [...existing, ...created];
+        this.save();
+    }
+
+    /**
      * 批量替换：删除 fromId，插入 additions
      *
      * 去掉一条宽泛规则再补上几条更具体的，是个整体动作——

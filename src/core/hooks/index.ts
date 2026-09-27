@@ -8,6 +8,7 @@ export {
     useChildNodes,
     useNodeActions,
     useSettings,
+    useRules,
     useTheme,
     useViewMode,
     useLocale,
