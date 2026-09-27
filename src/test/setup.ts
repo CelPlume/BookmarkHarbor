@@ -33,3 +33,8 @@ Object.defineProperty(crypto, 'randomUUID', {
         });
     },
 });
+
+// React 18+ 要求显式声明这是 act() 环境，否则 act() 退化为空操作，
+// 状态更新不会真正刷新，交互类测试会得到假结果。
+// 用类型断言而非 declare global，避免 setup.ts 被当作脚本时的全局污染。
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
