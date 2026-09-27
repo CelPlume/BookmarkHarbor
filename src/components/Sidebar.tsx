@@ -186,6 +186,9 @@ interface SidebarProps {
     onNavigateToFavorites?: () => void;
     onNavigateToReadLater?: () => void;
     onNavigateToTrash?: () => void;
+    onSelectTag?: (tag: string) => void;
+    onClearTagFilter?: () => void;
+    activeTags?: string[];
     currentView?: 'bookmarks' | 'favorites' | 'readLater' | 'trash';
 }
 
@@ -201,6 +204,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onNavigateToFavorites,
     onNavigateToReadLater,
     onNavigateToTrash,
+    onSelectTag,
+    onClearTagFilter,
+    activeTags = [],
     currentView = 'bookmarks',
 }) => {
     const { t } = useTranslation();
@@ -211,6 +217,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             .filter(n => n.parentId === rootId && n.type === 'folder' && !n.deletedAt)
             .sort((a, b) => a.orderKey.localeCompare(b.orderKey))
         : [];
+
+    // 标签索引：统计每个标签下的书签数量，按数量降序、同数量按名称升序
+    const tagCounts = React.useMemo(() => {
+        const counts = new Map<string, number>();
+        Object.values(nodes).forEach(node => {
+            if (node.deletedAt || node.type !== 'bookmark' || !node.tags) return;
+            node.tags.forEach(tag => {
+                counts.set(tag, (counts.get(tag) ?? 0) + 1);
+            });
+        });
+        return Array.from(counts.entries()).sort(
+            (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+        );
+    }, [nodes]);
 
     return (
         <aside className="w-full flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5">
@@ -266,6 +286,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         />
                     </div>
                 </div>
+
+                {/* TAGS Section */}
+                {tagCounts.length > 0 && (
+                    <div className="mb-4">
+                        <div className="flex items-center justify-between px-3 py-1.5">
+                            <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                                {t('sidebar.tags')}
+                            </p>
+                            {activeTags.length > 0 && (
+                                <Button
+                                    isIconOnly
+                                    size="sm"
+                                    variant="tertiary"
+                                    className="w-5 h-5 min-w-0"
+                                    onPress={onClearTagFilter}
+                                    aria-label={t('sidebar.clearTagFilter')}
+                                >
+                                    <Icon icon="lucide:x" className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
+                                </Button>
+                            )}
+                        </div>
+                        <div className="flex flex-col gap-0.5 mt-1">
+                            {tagCounts.map(([tag, count]) => {
+                                const isActive = activeTags.includes(tag);
+                                return (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => onSelectTag?.(tag)}
+                                        className={cn(
+                                            'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors text-left',
+                                            isActive
+                                                ? 'bg-[rgb(var(--color-primary-100-rgb))] text-[rgb(var(--color-primary-700-rgb))] font-medium'
+                                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                        )}
+                                    >
+                                        <Icon
+                                            icon="lucide:hash"
+                                            className="w-4 h-4 flex-shrink-0"
+                                            aria-hidden="true"
+                                        />
+                                        <span className="truncate flex-1">{tag}</span>
+                                        <span className="text-xs text-gray-400 flex-shrink-0">{count}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* FOLDERS Section */}
                 <div>

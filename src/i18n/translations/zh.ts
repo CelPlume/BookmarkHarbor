@@ -14,6 +14,8 @@ const zhTranslations = {
         favorites: '收藏夹',
         readingList: '稍后阅读',
         trash: '回收站',
+        tags: '标签',
+        clearTagFilter: '清除标签筛选',
         folders: '文件夹',
         user: '本地用户',
         localMode: '本地模式',

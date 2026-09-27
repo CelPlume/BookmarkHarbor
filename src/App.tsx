@@ -128,6 +128,7 @@ export function App() {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [inspectorOpen, setInspectorOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeTags, setActiveTags] = useState<string[]>([]);
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
     const [renamingId, setRenamingId] = useState<string | null>(null);
     const [activeDragId, setActiveDragId] = useState<string | null>(null);
@@ -362,12 +363,23 @@ export function App() {
     // 搜索过滤 + 排序（仅视觉排序，不修改存储顺序）
     const visibleNodes = useMemo(() => {
         const source = (() => {
-            if (!searchQuery) return baseNodes;
+            // 标签过滤是跨目录的正交维度：先在全库范围内按标签取交集，
+            // 再走搜索与排序，避免受当前视图（收藏夹/回收站等）的目录范围影响
+            let pool = baseNodes;
+
+            if (activeTags.length > 0) {
+                pool = Object.values(nodes)
+                    .filter(n => !n.deletedAt && n.id !== 'root' && n.type === 'bookmark')
+                    .filter(n => activeTags.every(tag => n.tags?.includes(tag)))
+                    .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+            }
+
+            if (!searchQuery) return pool;
 
             const query = searchQuery.toLowerCase();
-            const searchSource = currentView === 'bookmarks'
+            const searchSource = currentView === 'bookmarks' && activeTags.length === 0
                 ? Object.values(nodes).filter(n => !n.deletedAt && n.id !== 'root')
-                : baseNodes;
+                : pool;
 
             return searchSource
                 .filter(n =>
@@ -414,9 +426,9 @@ export function App() {
         });
 
         return sorted;
-    }, [baseNodes, currentView, nodes, searchQuery, sortField, sortOrder]);
+    }, [baseNodes, currentView, nodes, searchQuery, activeTags, sortField, sortOrder]);
 
-    const isSortableView = currentView === 'bookmarks' && !searchQuery && sortField === 'default';
+    const isSortableView = currentView === 'bookmarks' && !searchQuery && activeTags.length === 0 && sortField === 'default';
 
     // 选择管理
     const selection = useSelection({ visibleNodes });
@@ -688,6 +700,7 @@ export function App() {
         getStorage().clearAll();
         setCurrentFolderId('root');
         setCurrentView('bookmarks');
+        setActiveTags([]);
         setSidebarOpen(true);
         setInspectorOpen(false);
         setSelectionMode(false);
@@ -922,24 +935,44 @@ export function App() {
     // 导航到收藏夹
     const handleNavigateToFavorites = useCallback(() => {
         setCurrentView('favorites');
+        setActiveTags([]);
         selection.clearSelection();
     }, [selection]);
 
     // 导航到稍后阅读
     const handleNavigateToReadLater = useCallback(() => {
         setCurrentView('readLater');
+        setActiveTags([]);
         selection.clearSelection();
     }, [selection]);
 
     // 导航到回收站
     const handleNavigateToTrash = useCallback(() => {
         setCurrentView('trash');
+        setActiveTags([]);
+        selection.clearSelection();
+    }, [selection]);
+
+    // 标签筛选：点击在选中/取消之间切换，多标签取交集
+    const handleSelectTag = useCallback((tag: string) => {
+        setActiveTags(prev =>
+            prev.includes(tag) ? prev.filter(item => item !== tag) : [...prev, tag]
+        );
+        // 标签是独立的跨目录视图，进入时退出收藏夹/回收站等视图，
+        // 避免侧边栏同时高亮两个入口
+        setCurrentView('bookmarks');
+        selection.clearSelection();
+    }, [selection]);
+
+    const handleClearTagFilter = useCallback(() => {
+        setActiveTags([]);
         selection.clearSelection();
     }, [selection]);
 
     // 导航到文件夹时重置视图
     const handleFolderClick = useCallback((folderId: string) => {
         setCurrentView('bookmarks');
+        setActiveTags([]);
         handleNavigate(folderId);
     }, [handleNavigate]);
 
@@ -1068,6 +1101,9 @@ export function App() {
                                     onNavigateToFavorites={handleNavigateToFavorites}
                                     onNavigateToReadLater={handleNavigateToReadLater}
                                     onNavigateToTrash={handleNavigateToTrash}
+                                    onSelectTag={handleSelectTag}
+                                    onClearTagFilter={handleClearTagFilter}
+                                    activeTags={activeTags}
                                     currentView={currentView}
                                 />
                             </div>

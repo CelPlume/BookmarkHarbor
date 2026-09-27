@@ -16,6 +16,8 @@ const enTranslations: Translation = {
         favorites: 'Favorites',
         readingList: 'Reading List',
         trash: 'Trash',
+        tags: 'Tags',
+        clearTagFilter: 'Clear tag filter',
         folders: 'Folders',
         user: 'Local User',
         localMode: 'Local Mode',
