@@ -852,7 +852,10 @@ export function App() {
     // 更新节点
     const handleUpdateNode = useCallback((id: string, updates: Parameters<typeof updateNode>[1]) => {
         const keys = Object.keys(updates);
-        const mergeKey = keys.length === 1 && (keys[0] === 'title' || keys[0] === 'url')
+        // Free-text fields merge successive edits into one history step, so
+        // typing a title, URL or note does not create one entry per keystroke.
+        const MERGEABLE_FIELDS = ['title', 'url', 'notes'];
+        const mergeKey = keys.length === 1 && MERGEABLE_FIELDS.includes(keys[0])
             ? keys[0]
             : undefined;
         applyNodeUpdates([{ id, patch: updates }], { mergeKey });

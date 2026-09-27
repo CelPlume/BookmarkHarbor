@@ -8,6 +8,8 @@ import {
     TextField,
     Label,
     Input,
+    TextArea,
+    Chip,
     FieldError,
     Tooltip,
     Separator,
@@ -52,6 +54,7 @@ export const Inspector: React.FC<InspectorProps> = ({
     const [coverInputValue, setCoverInputValue] = useState('');
     const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
     const [coverUrlError, setCoverUrlError] = useState<string | null>(null);
+    const [tagInput, setTagInput] = useState('');
 
     // 获取第一个选中的项目
     const firstId = Array.from(selectedIds)[0];
@@ -130,6 +133,23 @@ export const Inspector: React.FC<InspectorProps> = ({
         } finally {
             setIsFetching(false);
         }
+    }, [item, onUpdate]);
+
+    // 标签：写入时去重、去空白、忽略空串，保持用户录入顺序
+    const handleAddTag = useCallback(() => {
+        const value = tagInput.trim();
+        if (!value || !item) return;
+        const current = item.tags ?? [];
+        if (!current.includes(value)) {
+            onUpdate(item.id, { tags: [...current, value] });
+        }
+        setTagInput('');
+    }, [tagInput, item, onUpdate]);
+
+    const handleRemoveTag = useCallback((tag: string) => {
+        if (!item) return;
+        const next = (item.tags ?? []).filter((t) => t !== tag);
+        onUpdate(item.id, { tags: next.length > 0 ? next : undefined });
     }, [item, onUpdate]);
 
     if (!item) {
@@ -271,6 +291,69 @@ export const Inspector: React.FC<InspectorProps> = ({
                             />
                         </TextField>
                     )}
+                </div>
+
+                {/* 标签（跨目录的正交分类） */}
+                <div className="space-y-3">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        {t('inspector.tags')}
+                    </label>
+
+                    {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                            {item.tags.map((tag) => (
+                                <Chip key={tag} size="sm" variant="soft" color="accent">
+                                    <Chip.Label>{tag}</Chip.Label>
+                                    <button
+                                        type="button"
+                                        className="ml-1 rounded-full hover:text-danger-500 transition-colors"
+                                        onClick={() => handleRemoveTag(tag)}
+                                        aria-label={t('inspector.removeTag', { tag })}
+                                    >
+                                        <Icon icon="lucide:x" className="w-3 h-3" aria-hidden="true" />
+                                    </button>
+                                </Chip>
+                            ))}
+                        </div>
+                    )}
+
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleAddTag();
+                        }}
+                    >
+                        <TextField
+                            value={tagInput}
+                            onChange={setTagInput}
+                        >
+                            <Input
+                                name="tag"
+                                autoComplete="off"
+                                aria-label={t('inspector.tags')}
+                                placeholder={t('inspector.addTagPlaceholder')}
+                            />
+                        </TextField>
+                    </form>
+                </div>
+
+                {/* 备注 */}
+                <div className="space-y-3">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        {t('inspector.notes')}
+                    </label>
+                    <TextField
+                        value={item.notes || ''}
+                        onChange={(value) => onUpdate(item.id, { notes: value })}
+                    >
+                        <TextArea
+                            name="notes"
+                            rows={3}
+                            autoComplete="off"
+                            aria-label={t('inspector.notes')}
+                            placeholder={t('inspector.notesPlaceholder')}
+                        />
+                    </TextField>
                 </div>
 
                 {/* 颜色选择 */}
