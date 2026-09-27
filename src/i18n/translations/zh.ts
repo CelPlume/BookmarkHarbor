@@ -105,6 +105,12 @@ const zhTranslations = {
         close: '关闭',
         customColor: '自定义颜色',
     },
+    moveTo: {
+        hint: '把选中的 {{count}} 个条目移动到：',
+        empty: '没有可用的目标文件夹',
+        current: '当前所在',
+        confirm: '移动到这里',
+    },
     duplicates: {
         title: '查找重复书签',
         find: '查找重复书签',
@@ -211,6 +217,8 @@ const zhTranslations = {
         restored: '已恢复 {{count}} 个项目',
         exportSelectionEmpty: '请先选择要导出的项目',
         cleared: '已清除全部数据',
+        copyFailed: '复制失败，请检查浏览器权限',
+        moveFailed: '无法移动到该文件夹',
     },
     aria: {
         toggleSidebar: '切换侧边栏',

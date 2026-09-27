@@ -26,6 +26,8 @@ interface BookmarkItemProps {
     onPrimaryAction: (keys: ModifierKeys) => void;
     onToggleSelect: () => void;
     onDoubleClick: () => void;
+    /** 右键菜单：在指针位置弹出，未选中项由调用方先行选中 */
+    onContextMenu?: (event: React.MouseEvent) => void;
     onRenameSubmit: (newTitle: string) => void;
     onRenameCancel: () => void;
     childCount?: number;
@@ -51,6 +53,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
     onPrimaryAction,
     onToggleSelect,
     onDoubleClick,
+    onContextMenu,
     onRenameSubmit,
     onRenameCancel,
     childCount = 0,
@@ -160,6 +163,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     });
                 }}
                 onDoubleClick={onDoubleClick}
+                onContextMenu={onContextMenu}
                 className={cn(
                     'h-16 w-full p-0 transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
@@ -270,6 +274,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     });
                 }}
                 onDoubleClick={onDoubleClick}
+                onContextMenu={onContextMenu}
                 className={cn(
                     'overflow-hidden w-full p-0 transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',
@@ -384,6 +389,7 @@ export const BookmarkItem: React.FC<BookmarkItemProps> = ({
                     });
                 }}
                 onDoubleClick={onDoubleClick}
+                onContextMenu={onContextMenu}
                 className={cn(
                     'overflow-hidden w-full p-0 transition-all transition-transform border border-gray-200/50 dark:border-white/5',
                     'bg-white/80 dark:bg-gray-800/50 backdrop-blur-md',

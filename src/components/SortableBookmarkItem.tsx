@@ -45,6 +45,7 @@ interface SortableBookmarkItemProps {
     onPrimaryAction: (node: Node, keys: ModifierKeys) => void;
     onSelect: (id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => void;
     onDoubleClick: (node: Node) => void;
+    onContextMenu?: (node: Node, event: React.MouseEvent) => void;
     onRenameSubmit: (id: string, newTitle: string) => void;
     onRenameCancel: () => void;
     childCount?: number;
@@ -62,6 +63,7 @@ export function SortableBookmarkItem({
     onPrimaryAction,
     onSelect,
     onDoubleClick,
+    onContextMenu,
     onRenameSubmit,
     onRenameCancel,
     childCount = 0,
@@ -108,6 +110,7 @@ export function SortableBookmarkItem({
                 onPrimaryAction={(keys) => onPrimaryAction(node, keys)}
                 onToggleSelect={() => onSelect(node.id, { shiftKey: false, metaKey: false, ctrlKey: false }, { forceToggle: true })}
                 onDoubleClick={() => onDoubleClick(node)}
+                onContextMenu={(e) => onContextMenu?.(node, e)}
                 onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
                 onRenameCancel={onRenameCancel}
                 childCount={childCount}

@@ -43,6 +43,7 @@ interface ContentAreaProps {
     singleClickAction: SingleClickAction;
     onSelect: (id: string, keys: ModifierKeys, options?: { forceToggle?: boolean }) => void;
     onDoubleClick: (node: Node) => void;
+    onContextMenu?: (node: Node, event: React.MouseEvent) => void;
     onClearSelection: () => void;
     onRenameSubmit: (id: string, newTitle: string) => void;
     onRenameCancel: () => void;
@@ -72,6 +73,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
     singleClickAction,
     onSelect,
     onDoubleClick,
+    onContextMenu,
     onClearSelection,
     onRenameSubmit,
     onRenameCancel,
@@ -286,6 +288,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                     onDoubleClick={() => {
                         if (allowDoubleClick) onDoubleClick(node);
                     }}
+                    onContextMenu={(e) => onContextMenu?.(node, e)}
                     onRenameSubmit={(newTitle) => onRenameSubmit(node.id, newTitle)}
                     onRenameCancel={onRenameCancel}
                     childCount={node.type === 'folder' ? getChildCount(node.id) : 0}
@@ -309,6 +312,7 @@ export const ContentArea: React.FC<ContentAreaProps> = ({
                 onDoubleClick={(nextNode) => {
                     if (allowDoubleClick) onDoubleClick(nextNode);
                 }}
+                onContextMenu={(nextNode, e) => onContextMenu?.(nextNode, e)}
                 onRenameSubmit={onRenameSubmit}
                 onRenameCancel={onRenameCancel}
                 childCount={node.type === 'folder' ? getChildCount(node.id) : 0}

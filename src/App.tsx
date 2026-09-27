@@ -52,6 +52,8 @@ import { ContentArea } from './components/ContentArea';
 import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
 import { DuplicatesModal } from './components/DuplicatesModal';
+import { ContextMenu, type ContextMenuState } from './components/ContextMenu';
+import { MoveToModal } from './components/MoveToModal';
 import { PanelResizer } from './components/PanelResizer';
 import { SettingsModal } from './components/SettingsModal';
 
@@ -144,6 +146,9 @@ export function App() {
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const [clearDataConfirmOpen, setClearDataConfirmOpen] = useState(false);
     const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+    const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+    const [moveToOpen, setMoveToOpen] = useState(false);
+    const [moveTargetIds, setMoveTargetIds] = useState<string[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // 面板宽度（可拖拽无极调节，本地持久化）
@@ -593,6 +598,116 @@ export function App() {
             window.open(node.url, '_blank');
         }
     }, [handleNavigate]);
+
+    // 右键菜单
+    //
+    // 与文件管理器一致：右键未选中的项先选中它，再对"本次作用范围"操作；
+    // 右键已选中的项则作用于整个选区。
+    const handleContextMenu = useCallback((node: Node, event: React.MouseEvent) => {
+        event.preventDefault();
+
+        const alreadySelected = selection.selectedIds.has(node.id);
+        const targetIds = alreadySelected
+            ? Array.from(selection.selectedIds)
+            : [node.id];
+
+        if (!alreadySelected) {
+            selection.selectOne(node.id);
+        }
+
+        setContextMenu({
+            x: event.clientX,
+            y: event.clientY,
+            nodeId: node.id,
+            targetIds,
+        });
+    }, [selection]);
+
+    // 右键菜单里的"编辑"：打开属性面板
+    const handleContextEdit = useCallback((node: Node) => {
+        selection.selectOne(node.id);
+        setInspectorOpen(true);
+    }, [selection]);
+
+    // 右键菜单里的"复制链接"：多选时按行拼接
+    const handleContextCopyUrl = useCallback((targets: Node[]) => {
+        const urls = targets
+            .filter(n => n.type === 'bookmark' && n.url)
+            .map(n => n.url as string);
+
+        if (urls.length === 0) return;
+
+        navigator.clipboard.writeText(urls.join('\n')).then(
+            () => toast(t('toast.copied', { count: urls.length }), {
+                variant: 'success',
+                timeout: 3000,
+            }),
+            () => toast(t('toast.copyFailed'), { variant: 'danger', timeout: 3000 })
+        );
+    }, [t]);
+
+    // 右键菜单里的"移动到"：打开目标文件夹选择器
+    const handleContextMove = useCallback((node: Node) => {
+        const alreadySelected = selection.selectedIds.has(node.id);
+        const ids = alreadySelected ? Array.from(selection.selectedIds) : [node.id];
+
+        if (!alreadySelected) selection.selectOne(node.id);
+
+        setMoveTargetIds(ids);
+        setMoveToOpen(true);
+    }, [selection]);
+
+    // 执行移动：目标文件夹由 MoveToModal 选出，循环检测在 storage.moveNodes 内
+    const handleConfirmMoveTo = useCallback((targetFolderId: string) => {
+        if (moveTargetIds.length === 0) return;
+
+        // 记录移动前的父节点与后继节点，撤销时据此还原到原位
+        const snapshot = moveTargetIds
+            .map(id => nodes[id])
+            .filter(Boolean)
+            .map(node => {
+                const siblings = Object.values(nodes)
+                    .filter(n => n.parentId === node.parentId && !n.deletedAt)
+                    .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+                const index = siblings.findIndex(n => n.id === node.id);
+                return {
+                    id: node.id,
+                    parentId: node.parentId,
+                    beforeId: index >= 0 ? siblings[index + 1]?.id : undefined,
+                };
+            })
+            .filter(item => item.parentId !== null);
+
+        const moved = moveNodes({ nodeIds: moveTargetIds, toParentId: targetFolderId });
+
+        if (!moved) {
+            toast(t('toast.moveFailed'), { variant: 'danger', timeout: 3000 });
+            return;
+        }
+
+        const movedIds = [...moveTargetIds];
+
+        history.record({
+            label: 'move-to',
+            undo: () => {
+                // 逐个移回原父节点，用 beforeId 恢复原来的相对位置
+                snapshot.forEach(({ id, parentId, beforeId }) => {
+                    moveNodes({
+                        nodeIds: [id],
+                        toParentId: parentId as string,
+                        beforeId,
+                    });
+                });
+            },
+            redo: () => {
+                moveNodes({ nodeIds: movedIds, toParentId: targetFolderId });
+            },
+        });
+
+        setMoveTargetIds([]);
+        selection.clearSelection();
+        toast(t('toast.moved'), { variant: 'success', timeout: 3000 });
+    }, [moveTargetIds, moveNodes, nodes, history, selection, t]);
 
     // 新建文件夹
     const handleNewFolder = useCallback(() => {
@@ -1221,6 +1336,7 @@ export function App() {
                                     singleClickAction={singleClickAction}
                                     onSelect={handleSelect}
                                     onDoubleClick={handleDoubleClick}
+                                    onContextMenu={handleContextMenu}
                                     onClearSelection={selection.clearSelection}
                                     onRenameSubmit={handleRenameSubmit}
                                     onRenameCancel={handleRenameCancel}
@@ -1372,6 +1488,35 @@ export function App() {
                     nodes={nodes}
                     onClose={() => setDuplicatesOpen(false)}
                     onMerge={handleMergeDuplicates}
+                />
+
+                <MoveToModal
+                    isOpen={moveToOpen}
+                    nodes={nodes}
+                    movingIds={moveTargetIds}
+                    onClose={() => {
+                        setMoveToOpen(false);
+                        setMoveTargetIds([]);
+                    }}
+                    onMove={handleConfirmMoveTo}
+                />
+
+                <ContextMenu
+                    state={contextMenu}
+                    nodes={nodes}
+                    onClose={() => setContextMenu(null)}
+                    onOpen={handleDoubleClick}
+                    onOpenInNewTab={(node) => {
+                        if (node.url) window.open(node.url, '_blank');
+                    }}
+                    onRename={(node) => setRenamingId(node.id)}
+                    onEdit={handleContextEdit}
+                    onDelete={(ids) => {
+                        setDeleteConfirmIds(ids);
+                        setDeleteConfirmOpen(true);
+                    }}
+                    onCopyUrl={handleContextCopyUrl}
+                    onMove={handleContextMove}
                 />
 
                 <Modal

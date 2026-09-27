@@ -107,6 +107,12 @@ const enTranslations: Translation = {
         close: 'Close',
         customColor: 'Custom color',
     },
+    moveTo: {
+        hint: 'Move the {{count}} selected item(s) to:',
+        empty: 'No folder available',
+        current: 'Current',
+        confirm: 'Move here',
+    },
     duplicates: {
         title: 'Find Duplicate Bookmarks',
         find: 'Find Duplicate Bookmarks',
@@ -213,6 +219,8 @@ const enTranslations: Translation = {
         restored: 'Restored {{count}} item(s)',
         exportSelectionEmpty: 'Select items to export',
         cleared: 'All data cleared',
+        copyFailed: 'Copy failed — check browser permissions',
+        moveFailed: 'Could not move to that folder',
     },
     aria: {
         toggleSidebar: 'Toggle sidebar',
