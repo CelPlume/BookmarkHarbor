@@ -32,3 +32,5 @@ vite.config.d.ts
 .windsurf
 .codex
 skills
+# npm lockfile — 本项目统一使用 bun（见 README）
+package-lock.json
