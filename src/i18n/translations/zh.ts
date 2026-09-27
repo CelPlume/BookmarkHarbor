@@ -99,6 +99,7 @@ const zhTranslations = {
         folder: '文件夹',
         bookmark: '书签',
         changeCover: '更换封面',
+        generateCover: '生成封面',
         fetchMetadata: '自动获取',
         pasteUrl: '粘贴图片链接...',
         close: '关闭',

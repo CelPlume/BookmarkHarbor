@@ -101,6 +101,7 @@ const enTranslations: Translation = {
         folder: 'Folder',
         bookmark: 'Bookmark',
         changeCover: 'Change Cover',
+        generateCover: 'Generate Cover',
         fetchMetadata: 'Auto Fetch',
         pasteUrl: 'Paste image URL...',
         close: 'Close',

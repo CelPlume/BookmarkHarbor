@@ -21,6 +21,7 @@ import { cn, fileToDataUrl, formatDate } from '../core/utils';
 import { fetchMetadata, getFaviconUrl } from '../core/metadata';
 import { httpUrlSchema, imageFileSchema } from '../core/validation';
 import { normalizeTag, appendTag, removeTag } from '../core/tags';
+import { generateCoverDataUrl, withGeneratedCover } from '../core/cover';
 
 // 预设颜色
 const PRESET_COLORS = [
@@ -121,18 +122,63 @@ export const Inspector: React.FC<InspectorProps> = ({
                 updates.iconSource = 'favicon';
             }
 
+            // 网站没有 og:image 时不留空封面，用确定性封面兜底
+            if (!metadata.ogImageUrl && !item.coverUrl) {
+                updates.coverUrl = generateCoverDataUrl({
+                    ...item,
+                    iconUrl: metadata.bestIconUrl ?? item.iconUrl,
+                });
+                updates.coverType = 'generated';
+            }
+
             if (Object.keys(updates).length > 0) {
                 onUpdate(item.id, updates);
             }
         } catch (error) {
             console.error('Failed to fetch metadata:', error);
-            // 尝试使用 favicon
+            // 抓取被 CORS 拦截或超时时：先用站点默认图标，
+            // 再补一张生成封面，界面上不至于空着
             const faviconUrl = getFaviconUrl(item.url);
+            const updates: UpdateNodeRequest = {};
+
             if (faviconUrl) {
-                onUpdate(item.id, { iconUrl: faviconUrl, iconSource: 'favicon' });
+                updates.iconUrl = faviconUrl;
+                updates.iconSource = 'favicon';
             }
+
+            if (!item.coverUrl) {
+                const generated = generateCoverDataUrl({
+                    ...item,
+                    iconUrl: faviconUrl || item.iconUrl,
+                });
+                updates.coverUrl = generated;
+                updates.coverType = 'generated';
+            }
+
+            onUpdate(item.id, updates);
         } finally {
             setIsFetching(false);
+        }
+    }, [item, onUpdate]);
+
+    // 无封面时按域名生成确定性封面（同一网站永远同色，不发网络请求）
+    const handleRegenerateCover = useCallback(() => {
+        if (!item) return;
+        onUpdate(item.id, {
+            coverUrl: generateCoverDataUrl(item),
+            coverType: 'generated',
+        });
+    }, [item, onUpdate]);
+
+    // 网址输入完成（失焦）时补一张生成封面
+    //
+    // 不在每次按键时生成：那样首个字符就会定下配色，后续输入不再更新。
+    // 已有封面的不覆盖，只有这位用户自己换封面时才改变。
+    const handleUrlBlur = useCallback(() => {
+        if (!item || item.type === 'folder') return;
+        const generated = withGeneratedCover(item);
+        if (generated) {
+            onUpdate(item.id, generated);
         }
     }, [item, onUpdate]);
 
@@ -238,6 +284,16 @@ export const Inspector: React.FC<InspectorProps> = ({
                                     {t('inspector.fetchMetadata')}
                                 </Button>
                             )}
+                            {!isFolder && (
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="bg-white/20 backdrop-blur-md border border-white/30 text-white"
+                                    onPress={handleRegenerateCover}
+                                >
+                                    {t('inspector.generateCover')}
+                                </Button>
+                            )}
                         </div>
                     </div>
 
@@ -285,6 +341,7 @@ export const Inspector: React.FC<InspectorProps> = ({
                             <Input
                                 name="url"
                                 autoComplete="off"
+                                onBlur={handleUrlBlur}
                                 className="text-primary-600 dark:text-primary-400 font-mono"
                             />
                         </TextField>
