@@ -59,6 +59,10 @@ interface SettingsModalProps {
     onTileColumnsDesktopChange: (value: number) => void;
     onTileColumnsMobileChange: (value: number) => void;
     onClearData: () => void;
+    /** 是否已启用加密，用于切换按钮文案 */
+    encrypted: boolean;
+    onOpenVaultSetup: () => void;
+    onLockNow: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -90,6 +94,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onTileColumnsDesktopChange,
     onTileColumnsMobileChange,
     onClearData,
+    encrypted,
+    onOpenVaultSetup,
+    onLockNow,
 }) => {
     const { t } = useTranslation();
     const colorInputRef = useRef<HTMLInputElement>(null);
@@ -460,6 +467,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </Tooltip>
                                 </div>
                             </div>
+                            <Separator className="my-4" />
+
+                            {/* 加密 */}
+                            <div className="space-y-2 pt-2">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        {t('vault.title')}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        {encrypted && (
+                                            <Button variant="tertiary" onPress={onLockNow}>
+                                                <Icon icon="lucide:lock" className="w-4 h-4" />
+                                                {t('vault.lockNow')}
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant={encrypted ? 'tertiary' : 'primary'}
+                                            onPress={onOpenVaultSetup}
+                                        >
+                                            <Icon
+                                                icon={encrypted ? 'lucide:lock-open' : 'lucide:lock'}
+                                                className="w-4 h-4"
+                                            />
+                                            {encrypted ? t('vault.disable') : t('vault.enable')}
+                                        </Button>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {encrypted ? t('vault.settingsHint') : t('vault.enableHint')}
+                                </p>
+                            </div>
+
                             <Separator className="my-4" />
 
                             {/* 清除数据 */}

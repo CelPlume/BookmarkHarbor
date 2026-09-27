@@ -58,6 +58,8 @@ import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
 import { DuplicatesModal } from './components/DuplicatesModal';
 import { OrganizeModal } from './components/OrganizeModal';
+import { LockScreen } from './components/LockScreen';
+import { VaultSetupModal } from './components/VaultSetupModal';
 import { ContextMenu, type ContextMenuState } from './components/ContextMenu';
 import { MoveToModal } from './components/MoveToModal';
 import { PanelResizer } from './components/PanelResizer';
@@ -128,6 +130,10 @@ function savePanelWidth(name: 'sidebar' | 'inspector', value: number): void {
 export function App() {
     const { t, i18n } = useTranslation();
     const { nodes } = useNodes();
+    const storage = getStorage();
+
+    // 加密库若已启用且尚未解锁，先显示锁定界面
+    const [locked, setLocked] = useState(() => getStorage().isEncrypted() && !getStorage().isUnlocked());
     const { createNode, updateNode, moveNodes, deleteNodes, restoreNodes } = useNodeActions();
     const [theme, setTheme] = useTheme();
     const [viewMode, setViewMode] = useViewMode();
@@ -155,6 +161,7 @@ export function App() {
     const [clearDataConfirmOpen, setClearDataConfirmOpen] = useState(false);
     const [duplicatesOpen, setDuplicatesOpen] = useState(false);
     const [organizeOpen, setOrganizeOpen] = useState(false);
+    const [vaultModalOpen, setVaultModalOpen] = useState(false);
     const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
     const [moveToOpen, setMoveToOpen] = useState(false);
     const [moveTargetIds, setMoveTargetIds] = useState<string[]>([]);
@@ -1291,6 +1298,21 @@ export function App() {
         },
     });
 
+    // 锁定态：不渲染任何书签界面
+    //
+    // 必须在最外层拦住——书签数据在解锁前根本不在内存里，
+    // 放行主界面只会让用户看到一片空白，以为数据丢了
+    if (locked) {
+        return (
+            <LockScreen
+                onUnlock={async (passphrase) => {
+                    await storage.unlock(passphrase);
+                    setLocked(false);
+                }}
+            />
+        );
+    }
+
     return (
         <div className="flex h-screen w-full flex-col bg-slate-50 dark:bg-slate-900">
             <a
@@ -1516,6 +1538,13 @@ export function App() {
                     onTileColumnsDesktopChange={handleTileColumnsDesktopChange}
                     onTileColumnsMobileChange={handleTileColumnsMobileChange}
                     onClearData={() => setClearDataConfirmOpen(true)}
+                    encrypted={storage.isEncrypted()}
+                    onOpenVaultSetup={() => setVaultModalOpen(true)}
+                    onLockNow={() => {
+                        storage.lock();
+                        setSettingsOpen(false);
+                        setLocked(true);
+                    }}
                 />
 
                 <Modal
@@ -1582,8 +1611,7 @@ export function App() {
                 />
 
                 <OrganizeModal
-                    isOpen={organizeOpen}
-                    nodes={nodes}
+                    isOpen={organizeOpen}                    nodes={nodes}
                     rules={rules}
                     onClose={() => setOrganizeOpen(false)}
                     onAddRule={addRule}
@@ -1597,6 +1625,20 @@ export function App() {
                         ));
                     }}
                     onApply={handleApplyOrganize}
+                />
+
+                <VaultSetupModal
+                    isOpen={vaultModalOpen}
+                    encrypted={storage.isEncrypted()}
+                    onClose={() => setVaultModalOpen(false)}
+                    onEnable={async (passphrase) => {
+                        await storage.enableEncryption(passphrase);
+                        toast(t('vault.enabled'), { variant: 'success', timeout: 3000 });
+                    }}
+                    onDisable={async (passphrase) => {
+                        await storage.disableEncryption(passphrase);
+                        toast(t('vault.disabled'), { variant: 'success', timeout: 3000 });
+                    }}
                 />
 
                 <ContextMenu
