@@ -31,10 +31,9 @@ export interface KeyboardShortcuts {
     onEscape?: () => void;
 
     /**
-     * 返回上级（Backspace）
+     * 返回上级（Backspace、Alt/⌘ + ←）
      */
     onBack?: () => void;
-
     /**
      * 新建文件夹（Ctrl/Cmd + Shift + N）
      */
@@ -117,8 +116,12 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions): void
             return;
         }
 
-        // Delete / Backspace 删除
-        if (e.key === 'Delete' || (e.key === 'Backspace' && !isMod)) {
+        // Delete 删除选中项
+        //
+        // 删除只绑 Delete。Backspace 留给"返回上级"——Windows 资源管理器和
+        // macOS Finder 里按 Backspace 都是回到上一层而不是删东西，
+        // 把删除也绑上去会让习惯文件管理器的用户误删。
+        if (e.key === 'Delete') {
             e.preventDefault();
             opts.onDelete?.();
             return;
@@ -191,8 +194,16 @@ export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions): void
             return;
         }
 
-        // Alt + Left 或 Backspace (with mod) 返回上级
-        if ((e.altKey && e.key === 'ArrowLeft') || (isMod && e.key === 'Backspace')) {
+        // 返回上级：Backspace（裸按）、Alt/⌘ + ←、Ctrl/Cmd + Backspace
+        //
+        // 裸按 Backspace 也返回上级，与文件管理器一致；
+        // Ctrl+Backspace 在 macOS 上被系统占用为"删除前一个词"，
+        // 所以两个都保留，两条路径都能返回上级。
+        if (
+            (e.altKey && e.key === 'ArrowLeft')
+            || (isMod && e.key === 'Backspace')
+            || (e.key === 'Backspace' && !isMod && !e.altKey)
+        ) {
             e.preventDefault();
             opts.onBack?.();
             return;
