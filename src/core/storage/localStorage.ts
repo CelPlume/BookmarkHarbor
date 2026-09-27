@@ -14,13 +14,76 @@ import type {
     Theme,
     Locale,
     ViewMode,
+    AutoOrganizeRule,
 } from '../types';
 import { generateId } from '../utils';
 import { generateOrderKey, generateOrderKeys } from '../orderKey';
 import { detectCycleForMultiple } from '../cycleDetection';
 
 const STORAGE_KEY = 'aurabookmarks_data';
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
+
+/**
+ * 版本迁移表：从版本 N 升到 N+1 的转换函数
+ *
+ * 每条迁移只负责相邻两个版本之间的差异，逐级执行。
+ * 新增字段、改结构、改语义都写在这里，而不是散落在 loadFromStorage 里。
+ */
+type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
+
+const MIGRATIONS: Record<number, Migration> = {
+    // v1 -> v2：新增规则化自动整理所需的 rules 字段
+    1: (data) => {
+        if (!Array.isArray(data.rules)) {
+            data.rules = [];
+        }
+        return data;
+    },
+};
+
+/**
+ * 读取存储里记录的版本号
+ *
+ * 与 loadFromStorage 分开：调用方只想知道"盘上是什么版本"，
+ * 不需要跑完整解析。读不到或格式不对时返回 null，表示无从判断。
+ */
+function readStoredVersion(): number | null {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as { version?: unknown };
+        return typeof parsed.version === 'number' ? parsed.version : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * 把数据从 fromVersion 逐级升到 CURRENT_VERSION
+ *
+ * 缺失的迁移步骤按原样跳过，不阻断加载——宁可让用户拿到缺字段的数据
+ * （后续读取处都有默认值兜底），也不该因为迁移失败就整份数据打不开。
+ * 版本号高于当前程序（用户降级）时同样不动数据。
+ */
+function runMigrations(data: Record<string, unknown>, fromVersion: number): Record<string, unknown> {
+    // 版本高于当前程序（用户降级）时保持原样，不擅自改写
+    if (fromVersion > CURRENT_VERSION) return data;
+
+    let migrated = data;
+    for (let v = fromVersion; v < CURRENT_VERSION; v += 1) {
+        const migration = MIGRATIONS[v];
+        if (!migration) continue;
+        try {
+            migrated = migration(migrated);
+        } catch (error) {
+            console.error(`迁移 v${v} -> v${v + 1} 失败:`, error);
+        }
+    }
+
+    // 统一落到当前版本号：v1 跑完迁移后要写成 v2，
+    // 数据里根本没有 version 字段时也要补上
+    return { ...migrated, version: CURRENT_VERSION };
+}
 
 /**
  * 获取默认存储数据
@@ -41,6 +104,7 @@ function getDefaultData(): StorageData {
         },
         assets: {},
         metadataCache: {},
+        rules: [],
         settings: {
             theme: 'system',
             locale: 'zh',
@@ -72,8 +136,14 @@ export function loadFromStorage(): StorageData {
             return getDefaultData();
         }
 
-        const data = JSON.parse(raw) as StorageData;
+        const data = JSON.parse(raw) as StorageData & Record<string, unknown>;
         const defaults = getDefaultData();
+
+        // 先跑版本迁移，再补默认值——迁移可能需要新增字段，
+        // 顺序反了会让迁移拿不到它期望的结构
+        const dataVersion = typeof data.version === 'number' ? data.version : CURRENT_VERSION;
+        const migrated = runMigrations(data as unknown as Record<string, unknown>, dataVersion) as unknown as StorageData;
+        Object.assign(data, migrated);
 
         // 兼容旧版本缺失字段
         data.settings = {
@@ -133,10 +203,9 @@ export function loadFromStorage(): StorageData {
             data.settings.viewMode = 'card';
         }
 
-        // 版本迁移（预留）
-        if (data.version !== CURRENT_VERSION) {
-            // TODO: 实现迁移逻辑
-            data.version = CURRENT_VERSION;
+        // 缺失的 rules 兜底（老数据经迁移后应为空数组）
+        if (!Array.isArray(data.rules)) {
+            data.rules = [];
         }
 
         return data;
@@ -167,6 +236,18 @@ export class StorageAdapter {
 
     constructor() {
         this.data = loadFromStorage();
+
+        // 迁移只改内存是不够的：不写回的话每次打开都要重跑一遍，
+        // 版本号也永远停在旧值上。这里把迁移结果落盘一次。
+        const storedVersion = readStoredVersion();
+        if (storedVersion !== null && storedVersion < CURRENT_VERSION) {
+            try {
+                saveToStorage(this.data);
+            } catch (error) {
+                // 写不进去（空间不足等）不影响本次使用，内存里已是新版本
+                console.error('迁移结果未能写回存储:', error);
+            }
+        }
     }
 
     /**
@@ -195,6 +276,7 @@ export class StorageAdapter {
             nodes: { ...this.data.nodes },
             assets: { ...this.data.assets },
             metadataCache: { ...this.data.metadataCache },
+            rules: [...(this.data.rules ?? [])],
             settings: { ...this.data.settings },
         };
         saveToStorage(this.data);
@@ -501,6 +583,92 @@ export class StorageAdapter {
         return this.data.settings.locale;
     }
 
+    // === 自动整理规则 ===
+
+    /**
+     * 获取全部规则，按优先级升序
+     */
+    getRules(): AutoOrganizeRule[] {
+        return [...(this.data.rules ?? [])].sort((a, b) => a.priority - b.priority);
+    }
+
+    /**
+     * 覆写全部规则
+     */
+    setRules(rules: AutoOrganizeRule[]): void {
+        this.data.rules = [...rules].sort((a, b) => a.priority - b.priority);
+        this.save();
+    }
+
+    /**
+     * 新增一条规则，追加到优先级末尾
+     */
+    addRule(rule: Omit<AutoOrganizeRule, 'priority' | 'createdAt' | 'updatedAt'>): AutoOrganizeRule {
+        const now = Date.now();
+        const existing = this.data.rules ?? [];
+        const maxPriority = existing.reduce((max, r) => Math.max(max, r.priority), 0);
+
+        const created: AutoOrganizeRule = {
+            ...rule,
+            priority: maxPriority + 1,
+            createdAt: now,
+            updatedAt: now,
+        };
+        this.data.rules = [...existing, created];
+        this.save();
+        return created;
+    }
+
+    /**
+     * 更新一条规则
+     */
+    updateRule(id: string, patch: Partial<AutoOrganizeRule>): AutoOrganizeRule | null {
+        const existing = this.data.rules ?? [];
+        const index = existing.findIndex(r => r.id === id);
+        if (index < 0) return null;
+
+        const updated: AutoOrganizeRule = {
+            ...existing[index],
+            ...patch,
+            id: existing[index].id,
+            updatedAt: Date.now(),
+        };
+        const next = [...existing];
+        next[index] = updated;
+        this.data.rules = next;
+        this.save();
+        return updated;
+    }
+
+    /**
+     * 删除一条规则
+     */
+    deleteRule(id: string): void {
+        this.data.rules = (this.data.rules ?? []).filter(r => r.id !== id);
+        this.save();
+    }
+
+    /**
+     * 重排优先级：按传入的 id 顺序依次赋 1..n
+     */
+    reorderRules(orderedIds: string[]): void {
+        const existing = this.data.rules ?? [];
+        const byId = new Map(existing.map(r => [r.id, r]));
+        const reordered: AutoOrganizeRule[] = [];
+
+        orderedIds.forEach((id, index) => {
+            const rule = byId.get(id);
+            if (rule) {
+                reordered.push({ ...rule, priority: index + 1, updatedAt: Date.now() });
+                byId.delete(id);
+            }
+        });
+        // 未出现在 orderedIds 里的保持原顺序追加在后
+        byId.forEach(rule => reordered.push(rule));
+
+        this.data.rules = reordered;
+        this.save();
+    }
     /**
      * 设置语言
      */

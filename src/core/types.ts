@@ -163,12 +163,80 @@ export interface AppState {
     expandedFolders: Set<string>;
 }
 
+// 自动整理规则的匹配条件（全部满足才算命中，未填写的条件不参与判断）
+export interface RuleCondition {
+    /** 域名包含该子串，如 "github.com" */
+    domainContains?: string;
+    /** 标题匹配该正则（已编译校验，长度受限） */
+    titleRegex?: string;
+    /** 网址匹配该正则 */
+    urlRegex?: string;
+    /** 创建时间早于该时间戳（Unix ms） */
+    createdBefore?: number;
+    /** 创建时间晚于该时间戳 */
+    createdAfter?: number;
+    /** 含有其中任意一个标签 */
+    tagIn?: string[];
+}
+
+// 命中规则后要执行的动作（未填写的动作不执行）
+export interface RuleAction {
+    /** 移动到指定文件夹 */
+    moveToFolderId?: string;
+    /** 追加这些标签（与已有标签取并集） */
+    addTags?: string[];
+    /** 标记为收藏 */
+    setFavorite?: boolean;
+    /** 标记为稍后阅读 */
+    setReadLater?: boolean;
+}
+
+// 自动整理规则
+export interface AutoOrganizeRule {
+    id: string;
+    /** 规则名称，仅用于界面展示 */
+    name: string;
+    enabled: boolean;
+    /** 优先级，数值小的先匹配 */
+    priority: number;
+    /** 命中后是否继续匹配后续规则；false 表示首个命中即停止 */
+    continueMatching?: boolean;
+    when: RuleCondition;
+    then: RuleAction;
+    createdAt: number;
+    updatedAt: number;
+}
+
+// 规则匹配预览：一条规则将影响哪些节点、做什么
+export interface RuleMatchDetail {
+    ruleId: string;
+    ruleName: string;
+    nodeIds: string[];
+}
+
+// 整批整理的预览结果
+export interface OrganizePreview {
+    /** 将被修改的节点总数（去重后） */
+    affectedCount: number;
+    /** 移动的节点数 */
+    moveCount: number;
+    /** 新增标签的次数 */
+    tagCount: number;
+    /** 收藏 / 稍后阅读标记数 */
+    flagCount: number;
+    /** 按规则分组的明细 */
+    details: RuleMatchDetail[];
+    /** 每条节点最终要写入的字段，供执行与撤销使用 */
+    patches: Array<{ id: string; patch: UpdateNodeRequest }>;
+}
+
 // 持久化存储结构
 export interface StorageData {
     version: number;
     nodes: Record<string, Node>;
     assets: Record<string, Asset>;
     metadataCache: Record<string, UrlMetadataCache>;
+    rules: AutoOrganizeRule[];
     settings: {
         theme: Theme;
         locale: Locale;
@@ -191,7 +259,7 @@ export interface StorageData {
 
 // 初始化存储数据
 export const DEFAULT_STORAGE_DATA: StorageData = {
-    version: 1,
+    version: 2,
     nodes: {
         root: {
             id: 'root',
@@ -205,6 +273,7 @@ export const DEFAULT_STORAGE_DATA: StorageData = {
     },
     assets: {},
     metadataCache: {},
+    rules: [],
     settings: {
         theme: 'system',
         locale: 'zh',
