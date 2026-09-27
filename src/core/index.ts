@@ -66,6 +66,19 @@ export {
 } from './ruleTemplates';
 export type { RuleTemplate, RuleTemplateGroup } from './ruleTemplates';
 
+// Vault（本地加密）
+export {
+    PBKDF2_ITERATIONS,
+    VAULT_FORMAT,
+    isVaultSupported,
+    deriveKey,
+    encryptData,
+    decryptData,
+    looksLikeVault,
+    assessPassphrase,
+} from './vault';
+export type { EncryptedVault } from './vault';
+
 // Storage
 export * from './storage';
 

@@ -19,9 +19,55 @@ import type {
 import { generateId } from '../utils';
 import { generateOrderKey, generateOrderKeys } from '../orderKey';
 import { detectCycleForMultiple } from '../cycleDetection';
+import {
+    encryptData,
+    decryptData,
+    deriveKey,
+    looksLikeVault,
+    toBase64,
+    fromBase64,
+    PBKDF2_ITERATIONS,
+    VAULT_FORMAT,
+    type EncryptedVault,
+} from '../vault';
 
 const STORAGE_KEY = 'aurabookmarks_data';
 const CURRENT_VERSION = 2;
+
+/**
+ * 明文设置键
+ *
+ * 界面语言、主题必须在解锁前就能读到（i18n 在 React 启动之前初始化），
+ * 所以这些设置单独存一份明文。加密只覆盖书签数据本身，
+ * 这一点在界面上要向用户说清楚。
+ */
+const SETTINGS_KEY = 'aurabookmarks_settings';
+
+/**
+ * 从明文设置键读取设置
+ *
+ * 读不到或格式不对时返回 null，由调用方决定回退到默认值。
+ */
+function loadPlainSettings(): StorageData['settings'] | null {
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as StorageData['settings'];
+        if (!parsed || typeof parsed !== 'object') return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+/** 写入明文设置 */
+function savePlainSettings(settings: StorageData['settings']): void {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch {
+        /* 设置写不进去不影响书签数据 */
+    }
+}
 
 /**
  * 版本迁移表：从版本 N 升到 N+1 的转换函数
@@ -40,6 +86,21 @@ const MIGRATIONS: Record<number, Migration> = {
         return data;
     },
 };
+
+/**
+ * 读出存储里的原始 JSON（可能是明文数据，也可能是密文封装）
+ *
+ * 与 loadFromStorage 分开：调用方只想知道"盘上是什么"。
+ */
+function readStoredRaw(): unknown {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
 
 /**
  * 读取存储里记录的版本号
@@ -234,7 +295,45 @@ export class StorageAdapter {
     private data: StorageData;
     private listeners: Set<() => void> = new Set();
 
+    /** 保险库是否启用（存储里放的是密文） */
+    private encrypted = false;
+
+    /** 解锁后的派生密钥；锁定时丢弃。只存在于内存，永不落盘 */
+    private vaultKey: CryptoKey | null = null;
+
+    /**
+     * 解锁时用到的盐与迭代数，缓存进内存
+     *
+     * 不能每次写入都从存储里现读：万一存储里的盐被改坏，
+     * 后续写入会用错误的盐，数据就永久解不开了。
+     */
+    private vaultSalt: string | null = null;
+    private vaultIterations: number = 0;
+
+    /**
+     * 写入串行队列
+     *
+     * save() 必须是同步的（调用方遍布各处），但加密是异步的。
+     * 用一个 Promise 链把落盘排成队列，避免两次快速修改交错写入，
+     * 导致先发起的写覆盖后发起的写。
+     */
+    private writeQueue: Promise<void> = Promise.resolve();
+
     constructor() {
+        const stored = readStoredRaw();
+        const plainSettings = loadPlainSettings();
+
+        if (stored && looksLikeVault(stored)) {
+            // 已加密：内存里先放默认数据，等解锁后再填入真实内容。
+            // 设置从明文键取，保证锁定状态下界面语言、主题仍可用。
+            this.encrypted = true;
+            this.data = getDefaultData();
+            if (plainSettings) {
+                this.data.settings = { ...this.data.settings, ...plainSettings };
+            }
+            return;
+        }
+
         this.data = loadFromStorage();
 
         // 迁移只改内存是不够的：不写回的话每次打开都要重跑一遍，
@@ -248,6 +347,102 @@ export class StorageAdapter {
                 console.error('迁移结果未能写回存储:', error);
             }
         }
+
+        // 首次运行时把设置同步到明文键，后续加密切换才有东西可读
+        savePlainSettings(this.data.settings);
+    }
+
+    // === 保险库状态 ===
+
+    /** 存储里是否已启用加密 */
+    isEncrypted(): boolean {
+        return this.encrypted;
+    }
+
+    /** 是否已解锁（未启用加密时恒为 true，因为没有锁） */
+    isUnlocked(): boolean {
+        return !this.encrypted || this.vaultKey !== null;
+    }
+
+    /**
+     * 启用加密：把当前数据整体加密写入，并清掉明文键
+     *
+     * 明文不清掉的话，加密就只是多了一份密文副本，毫无意义。
+     */
+    async enableEncryption(passphrase: string): Promise<void> {
+        const vault = await encryptData(this.data, passphrase);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
+        localStorage.removeItem(STORAGE_KEY + '_plaintext');
+        this.encrypted = true;
+        this.vaultSalt = vault.salt;
+        this.vaultIterations = vault.iterations;
+        this.vaultKey = await deriveKey(passphrase, fromBase64(vault.salt), vault.iterations);
+        this.notify();
+    }
+
+    /**
+     * 解锁：解出数据填回内存
+     *
+     * 口令错误时抛 WRONG_PASSPHRASE，调用方据此提示用户。
+     */
+    async unlock(passphrase: string): Promise<void> {
+        const stored = readStoredRaw();
+        if (!stored || !looksLikeVault(stored)) {
+            throw new Error('NO_VAULT');
+        }
+
+        const decrypted = await decryptData<StorageData>(stored, passphrase);
+
+        // 解密成功才换内存数据，失败时保持锁定态不动
+        this.data = {
+            ...getDefaultData(),
+            ...decrypted,
+            settings: decrypted.settings ?? this.data.settings,
+        };
+        this.vaultSalt = stored.salt;
+        this.vaultIterations = stored.iterations;
+        this.vaultKey = await deriveKey(
+            passphrase,
+            fromBase64(stored.salt),
+            stored.iterations
+        );
+        this.encrypted = true;
+        this.notify();
+    }
+
+    /**
+     * 锁定：丢弃内存中的密钥与书签数据
+     *
+     * 数据仍留在明文设置键与密文里，界面退回锁定态。
+     */
+    lock(): void {
+        if (!this.encrypted) return;
+        this.vaultKey = null;
+        const settings = this.data.settings;
+        this.data = getDefaultData();
+        this.data.settings = settings;
+        this.notify();
+    }
+
+    /**
+     * 关闭加密：校验口令后写回明文
+     *
+     * 必须是已解锁状态，且口令要再校验一次——关闭加密是不可逆的
+     * 降级操作，不该因为界面处于解锁态就放行。
+     */
+    async disableEncryption(passphrase: string): Promise<void> {
+        const stored = readStoredRaw();
+        if (!stored || !looksLikeVault(stored)) {
+            throw new Error('NO_VAULT');
+        }
+
+        // 用口令重新解密一次，确认持有者是本人
+        await decryptData<StorageData>(stored, passphrase);
+
+        saveToStorage(this.data);
+        this.encrypted = false;
+        this.vaultKey = null;
+        this.notify();
     }
 
     /**
@@ -267,6 +462,10 @@ export class StorageAdapter {
 
     /**
      * 保存并通知
+     *
+     * 内存态始终是明文；落盘时按当前模式决定写明文还是密文。
+     * 加密模式下走异步队列，但方法本身保持同步签名——调用方
+     * 遍布各处且不关心落盘时机。
      */
     private save(): void {
         // Ensure new references so React state updates reliably.
@@ -279,8 +478,62 @@ export class StorageAdapter {
             rules: [...(this.data.rules ?? [])],
             settings: { ...this.data.settings },
         };
-        saveToStorage(this.data);
+
+        if (this.encrypted) {
+            // 设置保持明文，保证下次启动在锁定态也能读到界面语言与主题
+            savePlainSettings(this.data.settings);
+
+            if (this.vaultKey) {
+                const snapshot = this.data;
+                const key = this.vaultKey;
+                this.writeQueue = this.writeQueue
+                    .then(() => this.writeEncrypted(snapshot, key))
+                    .catch(error => {
+                        console.error('加密写入失败:', error);
+                    });
+            }
+            // 未解锁时不落盘：内存里只有默认数据，写下去会覆盖真实密文
+        } else {
+            saveToStorage(this.data);
+            savePlainSettings(this.data.settings);
+        }
+
         this.notify();
+    }
+
+    /**
+     * 用已派生的密钥加密写入
+     *
+     * 复用 vaultKey 而不是每次从口令重新派生：PBKDF2 跑一次要几百毫秒，
+     * 每次编辑都重跑会让界面卡顿。
+     */
+    private async writeEncrypted(data: StorageData, key: CryptoKey): Promise<void> {
+        // 盐与迭代数用解锁时缓存下来的那份，不从存储现读
+        if (!this.vaultSalt) {
+            console.error('缺少盐，跳过加密写入');
+            return;
+        }
+
+        const iv = new Uint8Array(12);
+        crypto.getRandomValues(iv);
+
+        const plaintext = new TextEncoder().encode(JSON.stringify(data));
+        const ciphertext = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv: iv as unknown as BufferSource },
+            key,
+            plaintext
+        );
+
+        const vault: EncryptedVault = {
+            format: VAULT_FORMAT,
+            salt: this.vaultSalt,
+            iv: toBase64(iv),
+            data: toBase64(new Uint8Array(ciphertext)),
+            iterations: this.vaultIterations || PBKDF2_ITERATIONS,
+            updatedAt: Date.now(),
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(vault));
     }
 
     /**
@@ -790,4 +1043,14 @@ export function getStorage(): StorageAdapter {
         storageInstance = new StorageAdapter();
     }
     return storageInstance;
+}
+
+/**
+ * 丢弃单例，下次 getStorage 会重新构造
+ *
+ * 测试需要在用例之间重置状态；运行时代码不应调用——
+ * 丢掉单例意味着内存里未落盘的修改（加密模式的写入队列）也随之消失。
+ */
+export function resetStorage(): void {
+    storageInstance = null;
 }
