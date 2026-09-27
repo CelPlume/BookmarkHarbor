@@ -17,6 +17,9 @@ export { generateOrderKey, generateOrderKeys, rebalanceOrderKeys } from './order
 // Cycle Detection
 export { detectCycle, detectCycleForMultiple, getDescendantIds, getAncestorIds, buildBreadcrumbs } from './cycleDetection';
 
+// Tags
+export { collectTagCounts, filterByTags, normalizeTag, appendTag, removeTag } from './tags';
+
 // Storage
 export * from './storage';
 

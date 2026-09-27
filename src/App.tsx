@@ -41,6 +41,7 @@ import {
 import { importHtmlFile } from './core/importExport/htmlParser';
 import { exportAndDownload } from './core/importExport/htmlExporter';
 import { generateOrderKey } from './core/orderKey';
+import { filterByTags } from './core/tags';
 
 // Components
 import { Header } from './components/Header';
@@ -368,10 +369,7 @@ export function App() {
             let pool = baseNodes;
 
             if (activeTags.length > 0) {
-                pool = Object.values(nodes)
-                    .filter(n => !n.deletedAt && n.id !== 'root' && n.type === 'bookmark')
-                    .filter(n => activeTags.every(tag => n.tags?.includes(tag)))
-                    .sort((a, b) => a.orderKey.localeCompare(b.orderKey));
+                pool = filterByTags(nodes, activeTags);
             }
 
             if (!searchQuery) return pool;

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useDroppable } from '@dnd-kit/core';
 import type { Node } from '../core/types';
 import { cn } from '../core/utils';
+import { collectTagCounts } from '../core/tags';
 
 interface SidebarItemProps {
     node: Node;
@@ -219,18 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         : [];
 
     // 标签索引：统计每个标签下的书签数量，按数量降序、同数量按名称升序
-    const tagCounts = React.useMemo(() => {
-        const counts = new Map<string, number>();
-        Object.values(nodes).forEach(node => {
-            if (node.deletedAt || node.type !== 'bookmark' || !node.tags) return;
-            node.tags.forEach(tag => {
-                counts.set(tag, (counts.get(tag) ?? 0) + 1);
-            });
-        });
-        return Array.from(counts.entries()).sort(
-            (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
-        );
-    }, [nodes]);
+    const tagCounts = React.useMemo(() => collectTagCounts(nodes), [nodes]);
 
     return (
         <aside className="w-full flex flex-col h-full bg-gray-50/80 dark:bg-gray-900/50 backdrop-blur-xl border-r border-gray-200/50 dark:border-white/5">

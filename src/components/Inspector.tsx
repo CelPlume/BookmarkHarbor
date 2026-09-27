@@ -20,6 +20,7 @@ import type { Node, UpdateNodeRequest } from '../core/types';
 import { cn, fileToDataUrl, formatDate } from '../core/utils';
 import { fetchMetadata, getFaviconUrl } from '../core/metadata';
 import { httpUrlSchema, imageFileSchema } from '../core/validation';
+import { normalizeTag, appendTag, removeTag } from '../core/tags';
 
 // 预设颜色
 const PRESET_COLORS = [
@@ -137,19 +138,16 @@ export const Inspector: React.FC<InspectorProps> = ({
 
     // 标签：写入时去重、去空白、忽略空串，保持用户录入顺序
     const handleAddTag = useCallback(() => {
-        const value = tagInput.trim();
-        if (!value || !item) return;
-        const current = item.tags ?? [];
-        if (!current.includes(value)) {
-            onUpdate(item.id, { tags: [...current, value] });
-        }
+        if (!item) return;
+        const value = normalizeTag(tagInput);
+        if (!value) return;
+        onUpdate(item.id, { tags: appendTag(item.tags, value) });
         setTagInput('');
     }, [tagInput, item, onUpdate]);
 
     const handleRemoveTag = useCallback((tag: string) => {
         if (!item) return;
-        const next = (item.tags ?? []).filter((t) => t !== tag);
-        onUpdate(item.id, { tags: next.length > 0 ? next : undefined });
+        onUpdate(item.id, { tags: removeTag(item.tags, tag) });
     }, [item, onUpdate]);
 
     if (!item) {
