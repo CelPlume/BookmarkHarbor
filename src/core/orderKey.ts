@@ -138,21 +138,49 @@ export function generateOrderKeys(count: number, prevKey = '', nextKey = ''): st
 }
 
 /**
+ * 把数值转为固定长度的 62 进制字符串
+ *
+ * 固定长度是关键：只有等长的键，字符串比较才等价于数值比较。
+ */
+function toBase62(value: number, length: number): string {
+    let result = '';
+    let remaining = value;
+    for (let i = 0; i < length; i++) {
+        result = BASE_CHARS[remaining % BASE] + result;
+        remaining = Math.floor(remaining / BASE);
+    }
+    return result;
+}
+
+/**
  * 重新平衡排序键（当键空间耗尽时使用）
- * @param nodes 需要重排的节点ID和当前orderKey
- * @returns 新的orderKey映射
+ *
+ * 把一批兄弟节点重新均匀分配到键空间中。
+ *
+ * 键长按节点数动态确定。原先固定 2 位、步长按 62 计算，节点数达到 62
+ * 时步长会被算成 0，所有节点拿到同一个键 "00"，顺序彻底丢失。
+ * 这里改为先扩张键长直到 62^len 严格大于节点数，步长必然 ≥ 1。
+ *
+ * 注意：必须对同一父节点下的**全部**兄弟节点一次性重排，
+ * 部分重排会让新旧键长度不一致，等长假设被打破。
  */
 export function rebalanceOrderKeys(nodes: Array<{ id: string; orderKey: string }>): Record<string, string> {
     const sorted = [...nodes].sort((a, b) => a.orderKey.localeCompare(b.orderKey));
     const result: Record<string, string> = {};
 
-    const step = Math.floor(BASE / (sorted.length + 1));
+    if (sorted.length === 0) return result;
+
+    // 扩张键长，直到键空间严格容纳得下全部节点
+    let length = 2;
+    while (Math.pow(BASE, length) <= sorted.length) {
+        length += 1;
+    }
+
+    const space = Math.pow(BASE, length);
+    const step = Math.floor(space / (sorted.length + 1));
 
     sorted.forEach((node, index) => {
-        const position = (index + 1) * step;
-        const char1 = BASE_CHARS[Math.floor(position / BASE)] || BASE_CHARS[0];
-        const char2 = BASE_CHARS[position % BASE];
-        result[node.id] = char1 + char2;
+        result[node.id] = toBase62((index + 1) * step, length);
     });
 
     return result;
