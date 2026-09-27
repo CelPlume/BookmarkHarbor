@@ -9,3 +9,4 @@ export { Toolbar } from './Toolbar';
 export { BookmarkItem } from './BookmarkItem';
 export { ContentArea } from './ContentArea';
 export { SelectionToolbar } from './SelectionToolbar';
+export { DuplicatesModal } from './DuplicatesModal';

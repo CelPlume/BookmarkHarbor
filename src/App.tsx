@@ -42,6 +42,7 @@ import { importHtmlFile } from './core/importExport/htmlParser';
 import { exportAndDownload } from './core/importExport/htmlExporter';
 import { generateOrderKey } from './core/orderKey';
 import { filterByTags } from './core/tags';
+import type { MergePlan } from './core/dedupe';
 
 // Components
 import { Header } from './components/Header';
@@ -50,6 +51,7 @@ import { Toolbar } from './components/Toolbar';
 import { ContentArea } from './components/ContentArea';
 import { Inspector } from './components/Inspector';
 import { SelectionToolbar } from './components/SelectionToolbar';
+import { DuplicatesModal } from './components/DuplicatesModal';
 import { PanelResizer } from './components/PanelResizer';
 import { SettingsModal } from './components/SettingsModal';
 
@@ -141,6 +143,7 @@ export function App() {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[]>([]);
     const [clearDataConfirmOpen, setClearDataConfirmOpen] = useState(false);
+    const [duplicatesOpen, setDuplicatesOpen] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // 面板宽度（可拖拽无极调节，本地持久化）
@@ -967,6 +970,64 @@ export function App() {
         selection.clearSelection();
     }, [selection]);
 
+    // 合并重复书签：保留项写回合并字段，其余软删除。
+    // 整批只记一条历史，撤销时一次性还原，不做成几十步。
+    const handleMergeDuplicates = useCallback((plans: MergePlan[]) => {
+        if (plans.length === 0) return;
+
+        const before: Array<{ id: string; patch: UpdatePatch }> = [];
+        const after: Array<{ id: string; patch: UpdatePatch }> = [];
+        const removedIds: string[] = [];
+
+        plans.forEach(plan => {
+            const kept = nodes[plan.keepId];
+            if (!kept) return;
+
+            const patch = plan.merged as UpdatePatch;
+            if (Object.keys(patch).length > 0) {
+                before.push({
+                    id: plan.keepId,
+                    patch: {
+                        tags: kept.tags,
+                        notes: kept.notes,
+                        isFavorite: kept.isFavorite,
+                        isReadLater: kept.isReadLater,
+                        coverUrl: kept.coverUrl,
+                        coverType: kept.coverType,
+                        iconUrl: kept.iconUrl,
+                        iconSource: kept.iconSource,
+                    },
+                });
+                after.push({ id: plan.keepId, patch });
+            }
+
+            removedIds.push(...plan.removeIds);
+        });
+
+        after.forEach(({ id, patch }) => updateNode(id, patch));
+        if (removedIds.length > 0) {
+            deleteNodes(removedIds);
+        }
+
+        history.record({
+            label: 'merge-duplicates',
+            undo: () => {
+                before.forEach(({ id, patch }) => updateNode(id, patch));
+                if (removedIds.length > 0) restoreNodes(removedIds);
+            },
+            redo: () => {
+                after.forEach(({ id, patch }) => updateNode(id, patch));
+                if (removedIds.length > 0) deleteNodes(removedIds);
+            },
+        });
+
+        selection.clearSelection();
+        toast(t('duplicates.done', { count: removedIds.length }), {
+            variant: 'success',
+            timeout: 3000,
+        });
+    }, [nodes, updateNode, deleteNodes, restoreNodes, history, selection, t]);
+
     // 导航到文件夹时重置视图
     const handleFolderClick = useCallback((folderId: string) => {
         setCurrentView('bookmarks');
@@ -1064,6 +1125,7 @@ export function App() {
                 onNewBookmark={handleNewBookmark}
                 onImport={handleImport}
                 onExport={handleExport}
+                onFindDuplicates={() => setDuplicatesOpen(true)}
             />
 
             <DndContext
@@ -1304,6 +1366,13 @@ export function App() {
                         </Modal.Container>
                     </Modal.Backdrop>
                 </Modal>
+
+                <DuplicatesModal
+                    isOpen={duplicatesOpen}
+                    nodes={nodes}
+                    onClose={() => setDuplicatesOpen(false)}
+                    onMerge={handleMergeDuplicates}
+                />
 
                 <Modal
                     isOpen={clearDataConfirmOpen}

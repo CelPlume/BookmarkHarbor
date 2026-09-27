@@ -30,6 +30,7 @@ interface HeaderProps {
     onNewBookmark: () => void;
     onImport: (files: FileList) => void;
     onExport: (scope: ExportScope) => void;
+    onFindDuplicates: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -49,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
     onNewBookmark,
     onImport,
     onExport,
+    onFindDuplicates,
 }) => {
     const { t } = useTranslation();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -290,6 +292,17 @@ export const Header: React.FC<HeaderProps> = ({
                             </Dropdown.Menu>
                         </Dropdown.Popover>
                     </Dropdown>
+
+                    {/* 查找重复书签 */}
+                    <Button
+                        isIconOnly
+                        variant="tertiary"
+                        size="sm"
+                        onPress={onFindDuplicates}
+                        aria-label={t('duplicates.find')}
+                    >
+                        <Icon icon="lucide:copy-check" className="w-4 h-4" aria-hidden="true" />
+                    </Button>
                 </div>
                 <input
                     ref={fileInputRef}
@@ -329,6 +342,9 @@ export const Header: React.FC<HeaderProps> = ({
                                         case 'exportSelection':
                                             onExport('selection');
                                             break;
+                                        case 'findDuplicates':
+                                            onFindDuplicates();
+                                            break;
                                     }
                                 }}
                             >
@@ -347,6 +363,10 @@ export const Header: React.FC<HeaderProps> = ({
                                 <Dropdown.Item id="exportSelection" isDisabled={selectedCount === 0}>
                                     <Icon icon="lucide:check-square" className="w-4 h-4" />
                                     {t('export.selection')}
+                                </Dropdown.Item>
+                                <Dropdown.Item id="findDuplicates">
+                                    <Icon icon="lucide:copy-check" className="w-4 h-4" />
+                                    {t('duplicates.find')}
                                 </Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown.Popover>
