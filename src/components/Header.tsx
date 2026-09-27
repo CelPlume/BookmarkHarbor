@@ -293,7 +293,8 @@ export const Header: React.FC<HeaderProps> = ({
                         onPress={handleImportClick}
                         aria-label={t('toolbar.import')}
                     >
-                        <Icon icon="lucide:upload" className="w-4 h-4" aria-hidden="true" />
+                        {/* 导入 = 数据进来，箭头朝下 */}
+                        <Icon icon="lucide:download" className="w-4 h-4" aria-hidden="true" />
                     </Button>
 
                     {/* Export */}
@@ -305,7 +306,8 @@ export const Header: React.FC<HeaderProps> = ({
                                 size="sm"
                                 aria-label={t('toolbar.export')}
                             >
-                                <Icon icon="lucide:download" className="h-4 w-4" aria-hidden="true" />
+                                {/* 导出 = 数据出去，箭头朝上 */}
+                                <Icon icon="lucide:upload" className="h-4 w-4" aria-hidden="true" />
                             </Button>
                         </Dropdown.Trigger>
                         <Dropdown.Popover>
@@ -382,11 +384,11 @@ export const Header: React.FC<HeaderProps> = ({
                                 }}
                             >
                                 <Dropdown.Item id="import">
-                                    <Icon icon="lucide:upload" className="w-4 h-4" />
+                                    <Icon icon="lucide:download" className="w-4 h-4" />
                                     {t('toolbar.import')}
                                 </Dropdown.Item>
                                 <Dropdown.Item id="exportAll">
-                                    <Icon icon="lucide:download" className="w-4 h-4" />
+                                    <Icon icon="lucide:upload" className="w-4 h-4" />
                                     {t('export.all')}
                                 </Dropdown.Item>
                                 <Dropdown.Item id="exportFolder">
