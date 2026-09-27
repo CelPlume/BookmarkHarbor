@@ -20,6 +20,10 @@ export { detectCycle, detectCycleForMultiple, getDescendantIds, getAncestorIds, 
 // Tags
 export { collectTagCounts, filterByTags, normalizeTag, appendTag, removeTag } from './tags';
 
+// Dedupe
+export { normalizeUrl, findDuplicateGroups, planMerge, planMergeAll, TRACKING_PARAMS } from './dedupe';
+export type { DuplicateGroup, MergePlan, MergeStrategy } from './dedupe';
+
 // Storage
 export * from './storage';
 
