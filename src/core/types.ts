@@ -220,14 +220,16 @@ export interface OrganizePreview {
     affectedCount: number;
     /** 移动的节点数 */
     moveCount: number;
-    /** 新增标签的次数 */
+    /** 新增标签的节点数 */
     tagCount: number;
     /** 收藏 / 稍后阅读标记数 */
     flagCount: number;
     /** 按规则分组的明细 */
     details: RuleMatchDetail[];
-    /** 每条节点最终要写入的字段，供执行与撤销使用 */
+    /** 字段更新（标签、标记），直接走 updateNode */
     patches: Array<{ id: string; patch: UpdateNodeRequest }>;
+    /** 移动（单列，因为移动走 moveNodes 而不是字段更新） */
+    moves: Array<{ id: string; toFolderId: string }>;
 }
 
 // 持久化存储结构

@@ -46,6 +46,18 @@ export {
 } from './search';
 export type { ParsedQuery, PinyinIndex, MatchField, ScoredMatch } from './search';
 
+// Rules（自动整理）
+export {
+    MAX_REGEX_LENGTH,
+    validateRegex,
+    validateRuleRegexes,
+    matchesCondition,
+    hasAnyCondition,
+    hasAnyAction,
+    planOrganize,
+    isValidTargetFolder,
+} from './rules';
+
 // Storage
 export * from './storage';
 
